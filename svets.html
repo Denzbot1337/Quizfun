@@ -1,0 +1,1696 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#141518">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}img{max-width:100%}</style>
+<title>Svetsmästaren</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Svetsmästaren">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Stencil+One&family=Saira+Condensed:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Workshop at night: full-bleed welding table canvas, HUD strips top/bottom, jobs, machine and WPS binder as bottom sheets. Single dark look. */
+:root{
+  --shop:#141518;
+  --panel:#1a1b1f;
+  --line:rgba(255,255,255,.1);
+  --ink:#eceae4;
+  --muted:#9a978e;
+  --orange:#ff7a1a;
+  --hazard:#ffc21a;
+  --good:#5fd47a;
+  --bad:#ff5046;
+  --paper:#f3efe4;
+  --paper-ink:#1d1b16;
+  --f-stencil:"Saira Stencil One",Impact,sans-serif;
+  --f-ui:"Saira Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%;overflow:hidden;background:var(--shop);color:var(--ink);font-family:var(--f-ui);font-size:17px;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:none}
+button,select,input,textarea{font-family:var(--f-ui);color:inherit}
+button{cursor:pointer}
+input,textarea,select{-webkit-user-select:text;user-select:text}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--hazard);outline-offset:2px}
+#c{position:fixed;inset:0;width:100%;height:100%;display:block}
+
+.hazard{height:8px;background:repeating-linear-gradient(-45deg,var(--hazard) 0 10px,#1a1a1a 10px 20px);border-radius:2px}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-height:88%;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;background:var(--panel);border-top:1px solid var(--line);border-radius:20px 20px 0 0;padding:16px 16px calc(env(safe-area-inset-bottom,0px) + 18px);z-index:5;box-shadow:0 -10px 40px rgba(0,0,0,.5)}
+#home{max-height:56%}
+.inner{max-width:480px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+
+.home-top{position:fixed;left:0;right:0;top:0;padding:calc(env(safe-area-inset-top,0px) + 22px) 20px 0;pointer-events:none;z-index:4;text-align:center}
+.logo{margin:0;font-family:var(--f-stencil);font-weight:400;font-size:clamp(40px,12vw,64px);line-height:.9;letter-spacing:.02em;color:var(--ink);text-shadow:0 0 30px rgba(255,122,26,.35),0 2px 0 #000}
+.logo span{color:var(--orange)}
+.sub{margin-top:8px;font-weight:600;font-size:14px;letter-spacing:.3em;text-transform:uppercase;color:var(--muted)}
+.statrow{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.statrow b{font-family:var(--f-mono);font-size:15px}
+.h2{margin:0;font-weight:800;font-size:15px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
+.jobs{display:flex;flex-direction:column;gap:8px}
+.job{display:grid;grid-template-columns:44px 1fr auto;gap:12px;align-items:center;text-align:left;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.03)}
+.job:active:not(:disabled){background:rgba(255,122,26,.12)}
+.job:disabled{opacity:.4;cursor:default}
+.job .no{width:44px;height:44px;border-radius:10px;display:grid;place-items:center;font-family:var(--f-stencil);font-size:22px;background:#0d0e10;border:1px solid var(--line);color:var(--orange)}
+.job .t{min-width:0}
+.job .t b{display:block;font-size:19px;font-weight:700;line-height:1.1}
+.job .t span{font-size:14px;color:var(--muted)}
+.job .r{text-align:right;font-family:var(--f-mono);font-size:13px;color:var(--muted)}
+.stars{color:var(--hazard);letter-spacing:2px;font-size:15px}
+.stars .o{color:rgba(255,255,255,.18)}
+.binder{display:flex;align-items:center;gap:12px;text-align:left;padding:12px;border-radius:12px;border:1px solid rgba(255,194,26,.35);background:linear-gradient(90deg,rgba(255,194,26,.12),rgba(255,194,26,.02))}
+.binder .ico{width:40px;height:48px;flex:none;border-radius:4px 8px 8px 4px;background:#1f4f8a;border-left:6px solid #163a66;display:grid;place-items:center;font-family:var(--f-stencil);font-size:12px;color:#fff}
+.binder b{display:block;font-size:19px;font-weight:800}
+.binder span{font-size:14px;color:var(--muted)}
+.binder .go{margin-left:auto;font-size:24px;color:var(--hazard)}
+
+.machine{border-radius:14px;padding:14px;background:linear-gradient(180deg,#2b3a4a,#1c2733);border:1px solid rgba(160,200,255,.18);display:flex;flex-direction:column;gap:12px;box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
+.mhead{display:flex;justify-content:space-between;align-items:baseline}
+.mhead b{font-family:var(--f-stencil);font-size:20px;letter-spacing:.04em}
+.mhead span{font-family:var(--f-mono);font-size:11px;color:#9fb4c8}
+.knob{display:flex;flex-direction:column;gap:4px}
+.knob-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.knob-top label{font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:14px}
+.lcd{font-family:var(--f-mono);font-weight:700;font-size:20px;color:#ffb347;background:#0b0c0a;border:1px solid #000;border-radius:6px;padding:2px 10px;min-width:96px;text-align:right;text-shadow:0 0 8px rgba(255,160,40,.6)}
+.lcd.sm{font-size:16px;min-width:80px}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:34px;background:transparent}
+input[type=range]::-webkit-slider-runnable-track{height:8px;border-radius:4px;background:linear-gradient(90deg,#0b0c0a,#39414b)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:28px;height:28px;margin-top:-10px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#8a8f96,#2a2d31);border:2px solid #111;box-shadow:0 2px 6px rgba(0,0,0,.6)}
+input[type=range]::-moz-range-track{height:8px;border-radius:4px;background:#39414b}
+input[type=range]::-moz-range-thumb{width:26px;height:26px;border-radius:50%;background:#555;border:2px solid #111}
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sel{display:flex;flex-direction:column;gap:4px;min-width:0}
+.sel label{font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:13px;color:#c9d6e2}
+.sel select,.fld input,.fld select,.fld textarea{width:100%;min-width:0;font-size:17px;font-weight:600;padding:9px 10px;border-radius:8px;border:1px solid rgba(0,0,0,.6);background:#0f1318;color:var(--ink);-webkit-appearance:none;appearance:none}
+.amps{display:flex;justify-content:space-between;align-items:center;font-family:var(--f-mono);font-size:13px;color:#9fb4c8;padding-top:2px;border-top:1px dashed rgba(160,200,255,.2)}
+.amps b{color:#ffb347;font-size:15px}
+.wpsbar{display:flex;gap:8px;align-items:flex-end}
+.wpsbar .sel{flex:1}
+.rec{font-size:14px;color:#9fb4c8;line-height:1.4}
+.rec b{color:var(--ink);font-family:var(--f-mono);font-size:12.5px;font-weight:500}
+.jobinfo{display:flex;flex-direction:column;gap:4px}
+.jobinfo h3{margin:0;font-size:28px;font-weight:800;line-height:1}
+.jobinfo p{margin:0;color:var(--muted);font-size:15px;line-height:1.35}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font-family:var(--f-mono);font-size:12px;padding:3px 8px;border-radius:6px;border:1px solid var(--line);background:rgba(255,255,255,.04)}
+.big{border:0;border-radius:12px;padding:15px;font-weight:800;font-size:21px;letter-spacing:.12em;background:var(--orange);color:#1a0b00;box-shadow:0 0 24px rgba(255,122,26,.35)}
+.big:active{transform:scale(.98)}
+.ghost{border:1px solid var(--line);background:transparent;border-radius:12px;padding:12px;font-weight:700;font-size:17px;letter-spacing:.04em}
+.ghost.sm{padding:9px 12px;font-size:15px;white-space:nowrap}
+.ghost.danger{color:var(--bad);border-color:rgba(255,80,70,.4)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* WPS */
+.wpsdoc{background:var(--paper);color:var(--paper-ink);border-radius:6px;padding:12px;display:flex;flex-direction:column;gap:8px;box-shadow:0 4px 0 #b9b2a0}
+.wpsdoc header{display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid var(--paper-ink);padding-bottom:4px;gap:8px}
+.wpsdoc header b{font-family:var(--f-stencil);font-size:20px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.wpsdoc header span{font-family:var(--f-mono);font-size:11px;white-space:nowrap}
+.wtab{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid #8b8574;font-size:13px}
+.wtab div{padding:4px 6px;border:1px solid #cfc8b6;min-width:0}
+.wtab small{display:block;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#6b6556}
+.wtab b{font-family:var(--f-mono);font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.wpsdoc .note{font-size:14px;color:#4a463c;margin:0}
+.wpsdoc .acts{display:flex;gap:8px}
+.wpsdoc .acts button{flex:1;border:1px solid #8b8574;background:transparent;border-radius:8px;padding:8px;font-weight:700;font-size:15px;color:var(--paper-ink)}
+.wpsdoc .acts button.del{color:#a32018;border-color:#c77a72}
+.ex{font-family:var(--f-mono);font-size:10px;padding:1px 5px;border-radius:4px;background:#1d1b16;color:var(--paper);margin-left:6px;vertical-align:middle}
+.form{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fld{display:flex;flex-direction:column;gap:4px;min-width:0}
+.fld.full{grid-column:1/-1}
+.fld label{font-weight:700;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.fld input,.fld select,.fld textarea{border:1px solid var(--line);background:#101114}
+.fld textarea{min-height:60px;resize:vertical}
+.calc{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap}
+.calc span{font-family:var(--f-mono);font-size:13px;padding:5px 9px;border-radius:8px;background:rgba(255,194,26,.1);border:1px solid rgba(255,194,26,.3)}
+.empty{color:var(--muted);text-align:center;padding:20px 10px;border:1px dashed var(--line);border-radius:12px}
+
+.hud-top{position:fixed;left:0;right:0;top:0;padding:calc(env(safe-area-inset-top,0px) + 8px) 12px 8px;display:flex;flex-direction:column;gap:8px;z-index:4;background:linear-gradient(rgba(10,10,12,.94) 80%,rgba(10,10,12,0));pointer-events:none}
+.hud-row{display:flex;align-items:center;gap:8px;pointer-events:auto}
+.ibtn{flex:none;height:40px;min-width:40px;padding:0 10px;border-radius:10px;border:1px solid var(--line);background:#16171a;font-weight:700;font-size:15px}
+.ibtn.on{border-color:var(--good);color:var(--good)}
+.ibtn:disabled{opacity:.4}
+.hud-title{flex:1;min-width:0}
+.hud-title b{display:block;font-size:17px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hud-title small{display:block;font-family:var(--f-mono);font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prog{height:6px;border-radius:3px;background:rgba(255,255,255,.1);overflow:hidden;margin-top:3px}
+.prog div{height:100%;width:100%;transform-origin:left;transform:scaleX(0);background:var(--orange)}
+.hud-bot{position:fixed;left:0;right:0;bottom:0;padding:10px 14px calc(env(safe-area-inset-bottom,0px) + 12px);z-index:4;background:linear-gradient(transparent,rgba(10,10,12,.9) 35%);display:flex;flex-direction:column;gap:10px;pointer-events:none}
+.gauge-wrap{max-width:480px;width:100%;margin:0 auto;display:flex;flex-direction:column;gap:5px}
+.hud-top .gauge{height:18px}
+.hud-top .fb{font-size:20px;min-height:24px;line-height:1.1;text-shadow:0 2px 8px #000}
+.glab{display:flex;justify-content:space-between;font-size:12px;font-weight:700;letter-spacing:.14em;color:var(--muted);text-transform:uppercase}
+.gauge{position:relative;height:16px;border-radius:8px;overflow:hidden;background:linear-gradient(90deg,#6b1d18 0,#b8561a 22%,#2f7a3f 36%,#3fae57 50%,#2f7a3f 64%,#b8561a 78%,#6b1d18 100%);border:1px solid #000}
+.needle{position:absolute;top:-2px;bottom:-2px;width:4px;left:0;background:#fff;box-shadow:0 0 8px #fff;border-radius:2px;will-change:transform}
+.fb{text-align:center;font-weight:800;font-size:22px;letter-spacing:.06em;min-height:28px;text-transform:uppercase}
+.fb.good{color:var(--good)}.fb.warn{color:var(--hazard)}.fb.bad{color:var(--bad)}
+.hint{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:3;pointer-events:none;background:rgba(10,10,12,.88);border:1px solid var(--line);border-radius:14px;padding:14px 18px;text-align:center;max-width:300px;font-size:17px;line-height:1.35}
+.hint b{color:var(--hazard)}
+
+.res-grade{display:flex;align-items:center;gap:16px}
+.res-grade .pct{font-family:var(--f-stencil);font-size:64px;line-height:.9;color:var(--orange);text-shadow:0 0 20px rgba(255,122,26,.4)}
+.res-grade .bigstars{font-size:34px;letter-spacing:4px;color:var(--hazard)}
+.res-grade .bigstars .o{color:rgba(255,255,255,.15)}
+.res-grade p{margin:4px 0 0;color:var(--muted);font-size:16px}
+.photo{width:100%;border-radius:10px;border:1px solid var(--line);display:block;background:#000}
+.bars{display:grid;grid-template-columns:auto 1fr auto;gap:8px 10px;align-items:center;font-size:15px}
+.bars span{color:var(--muted)}
+.bars i{height:8px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden;display:block}
+.bars i s{display:block;height:100%;text-decoration:none}
+.bars b{font-family:var(--f-mono);font-size:13px;text-align:right;min-width:44px}
+.protocol{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
+.protocol div{padding:6px 8px;border-radius:8px;background:rgba(255,255,255,.04);border:1px solid var(--line);min-width:0}
+.protocol small{display:block;font-size:12px;letter-spacing:.04em;color:var(--muted)}
+.protocol b{font-family:var(--f-mono);font-size:14px}
+.tips{margin:0;padding:10px 12px;border-radius:10px;background:rgba(255,194,26,.08);border:1px solid rgba(255,194,26,.25);font-size:15px;line-height:1.4}
+.wallet{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;background:#0f1012;border:1px solid var(--line)}
+.wallet .rank{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1}
+.wallet .rank b{font-size:18px;font-weight:800;letter-spacing:.04em;color:var(--hazard)}
+.wallet .rank i{display:block;height:5px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}
+.wallet .rank i s{display:block;height:100%;background:var(--hazard);text-decoration:none}
+.wallet .rank small{font-size:12px;color:var(--muted)}
+.cash{font-family:var(--f-mono);font-weight:700;font-size:20px;color:var(--good);white-space:nowrap}
+.btns2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.btns2 .binder{padding:10px}
+.btns2 .binder b{font-size:17px}
+.btns2 .binder span{font-size:13px}
+.binder.shop{border-color:rgba(95,212,122,.4);background:linear-gradient(90deg,rgba(95,212,122,.12),rgba(95,212,122,.02))}
+.binder.shop .ico{background:#2a6a3a;border-left-color:#1a4a28}
+.stabs{display:flex;gap:8px}
+.stabs button{flex:1;border:1px solid var(--line);background:transparent;border-radius:10px;padding:10px;font-weight:800;font-size:16px;letter-spacing:.08em;text-transform:uppercase}
+.stabs button.on{background:var(--ink);color:var(--shop)}
+.sgroup{display:flex;flex-direction:column;gap:8px}
+.sgroup h3{margin:6px 0 0;font-size:14px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+.sitem{display:grid;grid-template-columns:52px 1fr auto;gap:12px;align-items:center;padding:10px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.03)}
+.sitem.eq{border-color:var(--good);box-shadow:inset 0 0 0 1px rgba(95,212,122,.3)}
+.sitem .pv{width:52px;height:52px;border-radius:10px;border:1px solid rgba(0,0,0,.6);display:grid;place-items:center;font-family:var(--f-stencil);font-size:18px;overflow:hidden}
+.sitem .tx{min-width:0}
+.sitem .tx b{display:block;font-size:18px;font-weight:800;line-height:1.1}
+.sitem .tx span{font-size:14px;color:var(--muted);line-height:1.25;display:block}
+.sitem .tx em{font-style:normal;font-size:12px;font-family:var(--f-mono);color:var(--hazard)}
+.sbtn{border:0;border-radius:10px;padding:10px 12px;font-weight:800;font-size:15px;white-space:nowrap;background:var(--hazard);color:#1a1200;min-width:92px}
+.sbtn.own{background:transparent;border:1px solid var(--line);color:var(--ink)}
+.sbtn.eq{background:transparent;border:1px solid var(--good);color:var(--good)}
+.sbtn:disabled{background:rgba(255,255,255,.06);color:var(--muted)}
+.pay{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-radius:12px;background:rgba(95,212,122,.08);border:1px solid rgba(95,212,122,.3)}
+.pay span{font-size:15px;color:var(--muted)}
+.pay b{font-family:var(--f-mono);font-size:22px;color:var(--good)}
+.heatrow{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:.14em;color:var(--muted);text-transform:uppercase}
+.heatbar{flex:1;height:8px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden}
+.heatbar div{height:100%;width:100%;transform-origin:left;transform:scaleX(0);background:linear-gradient(90deg,#3fae57,#ffc21a 60%,#ff5046 85%)}
+.streak{font-family:var(--f-mono);font-size:13px;color:var(--hazard);min-width:58px;text-align:right}
+.tut{position:fixed;inset:0;z-index:7;display:grid;place-items:center;padding:20px;background:rgba(5,5,7,.78)}
+.tut .card{max-width:340px;width:100%;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:12px}
+.tut .card small{font-family:var(--f-mono);font-size:12px;color:var(--hazard);letter-spacing:.1em}
+.tut .card h3{margin:0;font-size:26px;font-weight:800;line-height:1.05}
+.tut .card p{margin:0;font-size:17px;line-height:1.4;color:#cfccc4}
+.legend{display:flex;gap:10px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.legend span{display:flex;align-items:center;gap:5px}
+.legend i{width:16px;height:16px;border-radius:50%;border:2px solid;display:grid;place-items:center;font-style:normal;font-size:9px;font-weight:800;font-family:var(--f-mono)}
+.tools{display:flex;gap:8px;pointer-events:auto;max-width:480px;width:100%;margin:0 auto}
+.tools button{flex:1;height:42px;border-radius:10px;border:1px solid var(--line);background:#16171a;font-weight:800;font-size:15px;letter-spacing:.1em}
+.tools button.on{background:var(--ink);color:var(--shop);border-color:var(--ink)}
+.tools button.tg.on{background:var(--orange);border-color:var(--orange);color:#1a0b00}
+.tools #tLoupe{flex:.7}
+.tools #tLoupe.on{background:transparent;color:var(--good);border-color:var(--good)}
+.aread{text-transform:none;letter-spacing:0;font-family:var(--f-mono);font-size:13px;color:var(--ink);white-space:nowrap}
+.aread.lo{color:var(--bad)}.aread.hi{color:var(--hazard)}.aread.ok{color:var(--good)}
+.achart{width:100%;height:auto;display:block;border-radius:10px;border:1px solid var(--line);background:#0f1012}
+.cost{display:flex;justify-content:space-between;font-size:14px;color:var(--muted);margin-top:-8px;padding:0 4px}
+.cost b{font-family:var(--f-mono);color:var(--bad);font-weight:500}
+.row3{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.meav{width:64px;height:64px;flex:none;border-radius:12px;border:1px solid var(--line);background:radial-gradient(circle at 50% 30%,#2a2c33,#101114);padding:0;overflow:hidden;position:relative}
+.meav svg{width:100%;height:100%;display:block}
+.meav::after{content:"✎";position:absolute;right:3px;bottom:2px;font-size:12px;color:var(--hazard)}
+.wallet .rank small.nm{color:var(--ink);font-size:14px;font-weight:700}
+.sitem .pv.helm{background:radial-gradient(circle at 50% 40%,#2a2c33,#0d0e10);padding:4px}
+.sitem .pv.helm svg{width:100%;height:100%}
+.charprev{width:min(220px,60vw);aspect-ratio:1;margin:0 auto;border-radius:50%;background:radial-gradient(circle at 50% 40%,#34363e,#121316 70%);border:1px solid var(--line);overflow:hidden}
+.charprev svg{width:100%;height:100%;display:block}
+.namebox{width:100%;text-align:center;font-size:20px;font-weight:800;padding:10px;border-radius:10px;border:1px solid var(--line);background:#101114;color:var(--ink)}
+.seg2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.seg2 button{border:1px solid var(--line);background:transparent;border-radius:10px;padding:11px;font-weight:800;font-size:17px;letter-spacing:.06em}
+.seg2 button.on{background:var(--ink);color:var(--shop)}
+.crow{display:flex;flex-direction:column;gap:6px}
+.crow label{font-size:13px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between}
+.crow label small{letter-spacing:0;text-transform:none;font-weight:600}
+.cscroll{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 6px;scrollbar-width:none}
+.cscroll::-webkit-scrollbar{display:none}
+.copt{flex:none;width:42px;height:42px;border-radius:50%;border:2px solid transparent;background:transparent;padding:3px}
+.copt span{display:block;width:100%;height:100%;border-radius:50%;box-shadow:inset 0 -4px 8px rgba(0,0,0,.3)}
+.copt.on{border-color:var(--hazard)}
+.ctxt{flex:none;border:1px solid var(--line);background:transparent;border-radius:999px;padding:9px 14px;font-weight:700;font-size:15px;white-space:nowrap}
+.ctxt.on{background:var(--hazard);color:#1a1200;border-color:var(--hazard)}
+.chelm{flex:none;width:72px;height:50px;border-radius:10px;border:2px solid var(--line);background:#101114;padding:3px}
+.chelm svg{width:100%;height:100%}
+.chelm.on{border-color:var(--hazard)}
+.seg3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.seg3 button{border:1px solid rgba(0,0,0,.5);background:#0f1318;border-radius:8px;padding:10px 4px;font-weight:800;font-size:15px;letter-spacing:.06em;color:#c9d6e2}
+.seg3 button.on{background:#ffb347;color:#1a0f00;border-color:#ffb347;box-shadow:0 0 12px rgba(255,179,71,.4)}
+.pgroup{display:flex;flex-direction:column;gap:12px}
+.prow{display:flex;gap:8px;pointer-events:auto;max-width:480px;width:100%;margin:0 auto;align-items:center}
+.dip{flex:1;height:54px;border-radius:12px;border:0;background:#2f6fd0;color:#fff;font-weight:800;font-size:18px;letter-spacing:.12em;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;touch-action:none}
+.dip:active{background:#5a9bf5;transform:scale(.98)}
+.fbar{width:70%;height:6px;border-radius:3px;background:rgba(255,255,255,.2);overflow:hidden}
+.fbar i{display:block;height:100%;width:100%;transform-origin:left;transform:scaleX(0);background:#fff}
+.rodm{flex:1;display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:700;letter-spacing:.14em;color:var(--muted);text-transform:uppercase}
+.rodbar{height:10px;border-radius:5px;background:rgba(255,255,255,.1);overflow:hidden}
+.rodbar i{display:block;height:100%;width:100%;transform-origin:left;background:linear-gradient(90deg,#8a7a5a,#d6c7a4)}
+#rodBtn.warn{background:var(--orange);color:#1a0b00;border-color:var(--orange);animation:pls .45s infinite alternate}
+@keyframes pls{to{transform:scale(1.06)}}
+.tools button{font-size:14px;letter-spacing:.08em}
+.pmini{position:absolute;left:12px;right:12px;top:100%;margin-top:2px;display:flex;align-items:center;gap:8px;background:#fffdf5;color:#1a1208;border:2px solid #1a1208;border-radius:12px;padding:4px 10px 4px 4px;font-weight:800;font-size:15px;line-height:1.15;box-shadow:0 4px 12px rgba(0,0,0,.5);pointer-events:none;max-width:480px;margin-inline:auto;animation:pmin .25s ease-out}
+.pmini i{font-style:normal;color:#8a6a2a}
+.pface{flex:none;width:40px;height:40px;border-radius:8px;overflow:hidden;background:#e9e2d0}
+.pface svg{width:100%;height:100%;display:block}
+@keyframes pmin{from{transform:translateY(-8px);opacity:0}}
+.assist{display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:12px;background:#101114;border:1px solid var(--line)}
+.assist h4{margin:0;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.arow{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.arow>span{font-weight:700;font-size:15px}
+.chipset{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
+.chipset button{border:1px solid var(--line);background:transparent;border-radius:999px;padding:6px 11px;font-weight:700;font-size:14px}
+.chipset button.on{background:var(--ink);color:var(--shop);border-color:var(--ink)}
+.dlbl{font-weight:800;letter-spacing:.12em}.dlbl.good{color:#b8ffcb}.dlbl.warn{color:#ffe08a}
+.fbar{position:relative}
+.fbar b{position:absolute;top:-2px;bottom:-2px;left:53%;width:26%;border:2px solid rgba(255,255,255,.8);border-radius:4px}
+.pool{flex:none;width:92px;text-align:center;font-size:13px;font-weight:800;letter-spacing:.04em;padding:8px 6px;border-radius:10px;background:#101114;border:1px solid var(--line)}
+.pool.ok{color:var(--good)}.pool.lo{color:var(--bad)}.pool.hi{color:var(--hazard)}
+.tigrow{justify-content:flex-end;gap:10px;align-items:center}
+.tigmode{display:flex;flex-direction:column;gap:4px;margin-right:auto}
+.tigmode button{border:1px solid var(--line);background:#16171a;border-radius:8px;padding:5px 10px;font-weight:700;font-size:13px;min-width:78px}
+.tigmode button.on{background:var(--ink);color:var(--shop);border-color:var(--ink)}
+.dipr{position:relative;flex:none;width:96px;height:96px;border-radius:50%;border:0;padding:0;background:radial-gradient(circle at 40% 35%,#3c7fe0,#1d4f9e 70%);box-shadow:0 6px 18px rgba(0,0,0,.5),inset 0 2px 0 rgba(255,255,255,.25);touch-action:none;display:grid;place-items:center}
+.dipr:active{transform:scale(.94);background:radial-gradient(circle at 40% 35%,#5a9bf5,#2a64c0 70%)}
+.dipr:disabled{filter:grayscale(1) brightness(.6)}
+.dipr svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
+.dipr circle{fill:none;stroke-width:8}
+.dipr .trk{stroke:rgba(0,0,0,.35)}
+.dipr .win{stroke:rgba(255,255,255,.55);stroke-dasharray:130.3 276.5;stroke-dashoffset:-146.2}
+.dipr .beat{stroke:#7aa7e8;stroke-linecap:round;stroke-dasharray:0 276.5}
+.dipr .dlbl{position:relative;font-size:15px;color:#fff;letter-spacing:.1em}
+.pool{width:auto;min-width:86px}
+#visor{position:fixed;inset:0;z-index:3;pointer-events:none;opacity:0;padding:22px;border-radius:0;background:#111;-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0)}
+#visor::after{content:"";position:absolute;inset:18px;border-radius:14px;border:4px solid #050505}
+.toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 70px);transform:translate(-50%,-10px);opacity:0;z-index:9;pointer-events:none;background:#0d0d0f;border:1px solid var(--line);border-radius:10px;padding:8px 14px;font-weight:700;transition:.2s;white-space:normal;text-align:center;max-width:calc(100% - 32px);width:max-content}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.pelle{position:fixed;left:6px;top:calc(env(safe-area-inset-top,0px) + 64px);z-index:8;pointer-events:none;display:flex;align-items:flex-start;gap:4px;max-width:calc(100% - 12px)}
+.pelle svg{width:150px;height:195px;flex:none;transform-origin:50% 100%;animation:sway 1.6s ease-in-out infinite}
+.pelle.in{animation:pin .45s cubic-bezier(.3,1.6,.5,1)}
+.pelle.in svg{animation:rage .09s linear 6,sway 1.6s ease-in-out .6s infinite}
+@keyframes pin{from{transform:translate(-160px,20px) rotate(-12deg)}to{transform:none}}
+@keyframes sway{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(6deg) translateX(3px)}}
+@keyframes rage{0%{transform:translate(-3px,1px) rotate(-3deg)}50%{transform:translate(3px,-1px) rotate(3deg)}100%{transform:translate(-2px,0)}}
+.pbub{margin-top:14px;min-width:0;max-width:230px;background:#fffdf5;color:#1a1208;border:3px solid #1a1208;border-radius:16px 16px 16px 4px;padding:10px 12px;font-family:var(--f-ui);font-weight:800;font-size:18px;line-height:1.15;box-shadow:4px 4px 0 rgba(0,0,0,.5);transform:rotate(-2deg)}
+.pbub small{display:block;font-size:13px;letter-spacing:.14em;color:#b3261e;margin-bottom:2px}
+.pbub i{font-style:normal;color:#8a6a2a;font-weight:700}
+@media (prefers-reduced-motion:reduce){.pelle svg,.pelle.in,.pelle.in svg{animation:none}}
+
+.pelle.bot{top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 66px);align-items:flex-end}
+.pelle.bot svg{width:112px;height:146px}
+.pelle.bot .pbub{margin:0 0 70px;font-size:17px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<canvas id="c"></canvas>
+<div id="visor"></div>
+
+<div class="home-top" id="homeTop">
+  <h1 class="logo">SVETS<span>MÄSTAREN</span></h1>
+  <div class="sub">MIG/MAG · verkstad</div>
+</div>
+
+<div class="sheet" id="home">
+  <div class="inner">
+    <div class="hazard"></div>
+    <div class="wallet"><button class="meav" id="meAv" aria-label="Ändra din svetsare"></button><div class="rank"><small class="nm" id="meName"></small><b id="rankName">Lärling</b><i><s id="rankBar"></s></i><small id="rankNext"></small></div><div class="cash" id="cash">0 kr</div></div>
+    <div class="btns2">
+      <button class="binder" id="openWps"><span class="ico">WPS</span><span><b>WPS-pärm</b><span id="wpsCount">0 svetsdatablad</span></span></button>
+      <button class="binder shop" id="openShop"><span class="ico">KR</span><span><b>Butik</b><span>Utrustning & stil</span></span></button>
+    </div>
+    <div class="statrow"><h2 class="h2">Arbetsorder</h2><b id="totStars">★ 0 / 21</b></div>
+    <div class="jobs" id="jobs"></div>
+  </div>
+</div>
+
+<div class="sheet" id="setup" hidden>
+  <div class="inner">
+    <div class="jobinfo">
+      <div class="chips" id="jobChips"></div>
+      <h3 id="jobName"></h3>
+      <p id="jobDesc"></p>
+    </div>
+    <div class="machine">
+      <div class="mhead"><b id="machName">MIG 250</b><span>SVETSAGGREGAT</span></div>
+      <div class="seg3" id="procSeg"><button data-p="mig">MIG/MAG</button><button data-p="tig">TIG</button><button data-p="mma">MMA</button></div>
+      <div class="wpsbar" id="wpsRow">
+        <div class="sel"><label for="wpsPick">Ladda WPS</label><select id="wpsPick"></select></div>
+        <button class="ghost sm" id="saveWps">Spara som WPS</button>
+      </div>
+      <div class="pgroup" id="gMig">
+      <div class="knob"><div class="knob-top"><label for="volt">Spänning</label><div class="lcd" id="voltV"></div></div><input type="range" id="volt" min="14" max="30" step="0.5"></div>
+      <div class="knob"><div class="knob-top"><label for="wire">Trådmatning</label><div class="lcd" id="wireV"></div></div><input type="range" id="wire" min="2" max="15" step="0.5"></div>
+      <div class="mgrid">
+        <div class="sel"><label for="gas">Skyddsgas</label><select id="gas"></select></div>
+        <div class="sel"><label for="dia">Tråd</label><select id="dia"><option value="0.8">Ø 0,8 mm</option><option value="1">Ø 1,0 mm</option><option value="1.2">Ø 1,2 mm</option></select></div>
+      </div>
+      <div class="knob"><div class="knob-top"><label for="flow">Gasflöde</label><div class="lcd sm" id="flowV"></div></div><input type="range" id="flow" min="0" max="30" step="1"></div>
+      <div class="knob"><div class="knob-top"><label for="stick">Fritt trådutstick</label><div class="lcd sm" id="stickV"></div></div><input type="range" id="stick" min="5" max="25" step="1"></div>
+      </div>
+      <div class="pgroup" id="gTig" hidden>
+      <div class="knob"><div class="knob-top"><label for="tA">Ström</label><div class="lcd" id="tAV"></div></div><input type="range" id="tA" min="20" max="250" step="5"></div>
+      <div class="mgrid">
+        <div class="sel"><label for="tAC">Polaritet</label><select id="tAC"><option value="DC">DC− (stål, rostfritt)</option><option value="AC">AC (aluminium)</option></select></div>
+        <div class="sel"><label for="tW">Volfram</label><select id="tW"><option value="1.6">Ø 1,6 mm</option><option value="2.4">Ø 2,4 mm</option><option value="3.2">Ø 3,2 mm</option></select></div>
+      </div>
+      <div class="sel"><label for="tGas">Skyddsgas</label><select id="tGas"></select></div>
+      <div class="knob"><div class="knob-top"><label for="tFlow">Gasflöde</label><div class="lcd sm" id="tFlowV"></div></div><input type="range" id="tFlow" min="0" max="20" step="1"></div>
+      </div>
+      <div class="pgroup" id="gMma" hidden>
+      <div class="knob"><div class="knob-top"><label for="eA">Ström</label><div class="lcd" id="eAV"></div></div><input type="range" id="eA" min="40" max="200" step="5"></div>
+      <div class="mgrid">
+        <div class="sel"><label for="eType">Elektrod</label><select id="eType"><option value="E6013">Rutil E6013</option><option value="E7018">Basisk E7018</option></select></div>
+        <div class="sel"><label for="eDia">Diameter</label><select id="eDia"><option value="2.5">Ø 2,5 mm</option><option value="3.2">Ø 3,2 mm</option><option value="4">Ø 4,0 mm</option></select></div>
+      </div>
+      </div>
+      <div class="amps"><span id="procV">135 MAG</span><span>Ström ≈ <b id="ampV">0 A</b></span></div>
+      <div class="rec" id="rec"></div>
+    </div>
+    <div class="assist" id="assist"></div>
+    <div class="row2"><button class="ghost" id="setupBack">Tillbaka</button><button class="big" id="strike">TÄND BÅGEN</button></div>
+  </div>
+</div>
+
+<div class="sheet" id="charSheet" hidden>
+  <div class="inner">
+    <div class="statrow"><h2 class="h2">Din svetsare</h2><button class="ghost sm" id="charDone">Klar</button></div>
+    <div class="charprev" id="charPrev"></div>
+    <input class="namebox" id="cName" maxlength="16" placeholder="Skriv ditt namn" aria-label="Namn">
+    <div class="seg2" id="cGender"><button data-v="m">Kille</button><button data-v="f">Tjej</button></div>
+    <div id="charOpts" class="sgroup"></div>
+  </div>
+</div>
+
+<div class="sheet" id="shop" hidden>
+  <div class="inner">
+    <div class="statrow"><h2 class="h2">Verkstadsbutik</h2><div class="cash" id="shopCash">0 kr</div></div>
+    <div class="stabs"><button class="on" data-t="gear">Utrustning</button><button data-t="cos">Utseende</button></div>
+    <div id="shopList" class="sgroup"></div>
+    <button class="ghost" id="shopBack">Tillbaka till verkstaden</button>
+  </div>
+</div>
+
+<div class="sheet" id="wpsList" hidden>
+  <div class="inner">
+    <div class="statrow"><h2 class="h2">WPS-pärm</h2><button class="ghost sm" id="wpsBack">Stäng</button></div>
+    <p class="rec" style="margin:0;color:var(--muted)">Ett WPS (svetsdatablad) beskriver hur en svets ska göras: gas, tråd, spänning, trådmatning med mera. Ladda det på maskinen innan du tänder bågen.</p>
+    <button class="big" id="newWps">+ NY WPS</button>
+    <div class="jobs" id="wpsDocs"></div>
+  </div>
+</div>
+
+<div class="sheet" id="wpsForm" hidden>
+  <div class="inner">
+    <div class="statrow"><h2 class="h2" id="wfTitle">Ny WPS</h2><button class="ghost sm" id="wfCancel">Avbryt</button></div>
+    <form class="form" id="wf" autocomplete="off">
+      <div class="fld full"><label for="f_name">Beteckning</label><input id="f_name" maxlength="24" placeholder="WPS-002"></div>
+      <div class="fld"><label for="f_mat">Grundmaterial</label><select id="f_mat"><option value="steel">Stål (olegerat)</option><option value="inox">Rostfritt</option><option value="alu">Aluminium</option></select></div>
+      <div class="fld"><label for="f_mm">Godstjocklek (mm)</label><input id="f_mm" type="number" inputmode="decimal" min="1" max="20" step="0.5"></div>
+      <div class="fld"><label for="f_joint">Fogtyp</label><select id="f_joint"><option value="BW">BW – stumfog</option><option value="FW">FW – kälfog</option></select></div>
+      <div class="fld"><label for="f_pos">Svetsläge</label><select id="f_pos"><option value="PA">PA – horisontal</option><option value="PB">PB – horisontal kälsvets</option><option value="PC">PC – tvärsvets</option><option value="PF">PF – vertikal uppåt</option></select></div>
+      <div class="fld"><label for="f_gas">Skyddsgas</label><select id="f_gas"></select></div>
+      <div class="fld"><label for="f_flow">Gasflöde (l/min)</label><input id="f_flow" type="number" inputmode="decimal" min="0" max="30" step="1"></div>
+      <div class="fld"><label for="f_dia">Tråddiameter</label><select id="f_dia"><option value="0.8">Ø 0,8 mm</option><option value="1">Ø 1,0 mm</option><option value="1.2">Ø 1,2 mm</option></select></div>
+      <div class="fld"><label for="f_stick">Trådutstick (mm)</label><input id="f_stick" type="number" inputmode="decimal" min="5" max="25" step="1"></div>
+      <div class="fld"><label for="f_v">Spänning (V)</label><input id="f_v" type="number" inputmode="decimal" min="14" max="30" step="0.5"></div>
+      <div class="fld"><label for="f_w">Trådmatning (m/min)</label><input id="f_w" type="number" inputmode="decimal" min="2" max="15" step="0.5"></div>
+      <div class="fld full"><label for="f_ts">Svetshastighet (mm/min)</label><input id="f_ts" type="number" inputmode="decimal" min="100" max="1200" step="10"></div>
+      <div class="calc" id="wfCalc"></div>
+      <div class="fld full"><label for="f_note">Anteckning</label><textarea id="f_note" maxlength="200" placeholder="T.ex. rengör ytan, 2 mm spalt"></textarea></div>
+      <div class="fld full" style="flex-direction:row;gap:10px"><button type="button" class="ghost danger" id="wfDel" hidden style="flex:1">Ta bort</button><button type="submit" class="big" style="flex:2">SPARA WPS</button></div>
+    </form>
+  </div>
+</div>
+
+<div class="hud-top" id="hudTop" hidden>
+  <div class="hud-row">
+    <button class="ibtn" id="quit" aria-label="Avbryt">✕</button>
+    <div class="hud-title"><b id="hudJob"></b><small id="hudPar"></small><div class="prog"><div id="hudProg"></div></div></div>
+    <button class="ibtn on" id="helmetBtn">HJÄLM</button>
+    <button class="ibtn" id="inspect" disabled>KLAR</button>
+  </div>
+  <div class="gauge-wrap">
+    <div class="glab"><span>För långsamt</span><span>Hastighet</span><span>För snabbt</span></div>
+    <div class="gauge" id="gauge"><div class="needle" id="needle"></div></div>
+    <div class="heatrow"><span>Plåtvärme</span><div class="heatbar"><div id="heatFill"></div></div><span class="aread" id="aV"></span><span class="streak" id="streakV"></span></div>
+    <div class="fb" id="fb"></div>
+  </div>
+  <div class="pmini" id="pmini" hidden><span class="pface" id="pface"></span><span id="pminiTxt"></span></div>
+  <div hidden>
+  </div>
+</div>
+<div class="hud-bot" id="hudBot" hidden>
+  <div class="prow tigrow" id="pTig" hidden>
+    <div class="tigmode" id="tigMode"><button data-t="0">Manuell</button><button data-t="1">Auto</button><button data-t="2">Av</button></div>
+    <div class="pool" id="poolV">Bra mängd</div>
+    <button id="dipBtn" class="dipr" aria-label="Doppa tillsatstråd"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="44" class="trk"/><circle cx="50" cy="50" r="44" class="win" id="winArc"/><circle cx="50" cy="50" r="44" class="beat" id="beatArc"/></svg><span class="dlbl" id="dipLbl">DOPPA</span></button>
+  </div>
+  <div class="prow" id="pMma" hidden><div class="rodm"><span>Elektrod kvar</span><div class="rodbar"><i id="rodBar"></i></div></div><button id="rodBtn" class="ghost sm">BYT ELEKTROD</button></div>
+  <div class="tools"><button id="tWeld" class="on">SVETS</button><button id="tChip" class="tg" hidden>SLAGG</button><button id="tGrind" class="tg">SLIP</button><button id="tLoupe" class="on">LUPP</button></div>
+</div>
+<div class="hint" id="hint" hidden><span id="hintTxt">Sätt fingret på fogen och <b>dra jämnt</b> längs den.<br>Bågen tänds där du trycker.</span></div>
+
+<div class="sheet" id="result" hidden>
+  <div class="inner">
+    <div class="res-grade"><div class="pct" id="rPct">0%</div><div><div class="bigstars" id="rStars"></div><p id="rVerdict"></p></div></div>
+    <div class="pay"><span id="rPayTxt">Lön vid leverans</span><b id="rPay">+0 kr</b></div>
+    <div class="cost" id="rCost" hidden><span>Slipskivor</span><b id="rCostV"></b></div>
+    <canvas class="photo" id="photo" width="600" height="300"></canvas>
+    <div class="legend" id="rLegend"></div>
+    <h2 class="h2" id="aHead">a-mått längs fogen</h2>
+    <canvas class="achart" id="aChart" width="600" height="170"></canvas>
+    <div class="bars" id="rBars"></div>
+    <h2 class="h2">Svetsprotokoll</h2>
+    <div class="protocol" id="rProto"></div>
+    <p class="tips" id="rTip"></p>
+    <button class="big" id="next">LEVERERA</button>
+    <div class="row3"><button class="ghost" id="repairB">Slipa & laga</button><button class="ghost" id="retry">Skrota, gör om</button></div>
+  </div>
+</div>
+<div class="pelle" id="pelle" hidden aria-live="polite">
+<svg viewBox="0 0 200 260" aria-hidden="true">
+<defs>
+  <radialGradient id="pSkin" cx="42%" cy="38%" r="70%"><stop offset="0" stop-color="#f1b99f"/><stop offset=".55" stop-color="#dc8f75"/><stop offset="1" stop-color="#a95a47"/></radialGradient>
+  <linearGradient id="pNeck" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9c5140"/><stop offset="1" stop-color="#c97a63"/></linearGradient>
+  <radialGradient id="pNose" cx="45%" cy="40%" r="70%"><stop offset="0" stop-color="#ec8f80"/><stop offset=".6" stop-color="#cf5a55"/><stop offset="1" stop-color="#a8404a"/></radialGradient>
+  <radialGradient id="pFlush"><stop offset="0" stop-color="#d9383f" stop-opacity=".55"/><stop offset="1" stop-color="#d9383f" stop-opacity="0"/></radialGradient>
+  <linearGradient id="pCapShade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a1a10" stop-opacity=".55"/><stop offset="1" stop-color="#3a1a10" stop-opacity="0"/></linearGradient>
+  <linearGradient id="pCap" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d06a22"/><stop offset="1" stop-color="#8e4210"/></linearGradient>
+  <linearGradient id="pDenim" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3b5f93"/><stop offset="1" stop-color="#22385c"/></linearGradient>
+  <pattern id="pPlaid" width="16" height="16" patternUnits="userSpaceOnUse"><rect width="16" height="16" fill="#9e2a24"/><rect width="16" height="5" y="5" fill="#5e1512" opacity=".8"/><rect width="5" height="16" x="5" fill="#5e1512" opacity=".6"/><rect width="16" height="1" y="12" fill="#e0b070" opacity=".35"/><rect width="1" height="16" x="12" fill="#e0b070" opacity=".35"/></pattern>
+  <pattern id="pStub" width="4" height="4" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r=".55" fill="#4a3a33"/><circle cx="3" cy="3" r=".45" fill="#7a6a60"/></pattern>
+  <linearGradient id="pCan" x1="0" x2="1"><stop offset="0" stop-color="#8a7a3a"/><stop offset=".3" stop-color="#f3e3a0"/><stop offset=".55" stop-color="#c9a93e"/><stop offset="1" stop-color="#6b5a20"/></linearGradient>
+  <linearGradient id="pLab" x1="0" x2="1"><stop offset="0" stop-color="#4a0a0a"/><stop offset=".35" stop-color="#9a1b1b"/><stop offset="1" stop-color="#3a0808"/></linearGradient>
+  <clipPath id="pJaw"><path d="M66 112C70 138 84 160 100 162C116 160 130 138 134 112L134 150L66 150Z"/></clipPath>
+</defs>
+<path d="M4 260C6 212 36 188 70 180L130 180C164 188 194 212 196 260Z" fill="url(#pPlaid)"/>
+<path d="M4 260C6 212 36 188 70 180L130 180C164 188 194 212 196 260Z" fill="#000" opacity=".18"/>
+<path d="M58 212L142 212L148 260L52 260Z" fill="url(#pDenim)"/>
+<path d="M50 186L66 214M150 186L134 214" stroke="#26406a" stroke-width="10" stroke-linecap="round"/>
+<circle cx="64" cy="214" r="4.5" fill="#c7c7c7" stroke="#555"/><circle cx="136" cy="214" r="4.5" fill="#c7c7c7" stroke="#555"/>
+<rect x="84" y="222" width="30" height="24" rx="3" fill="#1d3150"/>
+<rect x="90" y="214" width="3" height="14" rx="1" fill="#e6e6d8"/><rect x="96" y="216" width="3" height="12" rx="1" fill="#2c2c2c"/>
+<ellipse cx="120" cy="240" rx="10" ry="6" fill="#111" opacity=".35"/><ellipse cx="72" cy="248" rx="7" ry="4" fill="#111" opacity=".3"/>
+<path d="M74 142C74 164 80 184 100 188C120 184 126 164 126 142Z" fill="url(#pNeck)"/>
+<path d="M78 150C80 170 86 182 100 185C114 182 120 170 122 150" fill="url(#pStub)" opacity=".7"/>
+<ellipse cx="61" cy="104" rx="8" ry="13" fill="#c9785f"/><ellipse cx="139" cy="104" rx="8" ry="13" fill="#c9785f"/>
+<path d="M60 98Q58 104 62 110" stroke="#9a4c3c" stroke-width="2" fill="none"/><path d="M140 98Q142 104 138 110" stroke="#9a4c3c" stroke-width="2" fill="none"/>
+<path d="M64 88C62 60 80 44 100 44C122 44 138 60 136 88C138 110 136 132 126 148C118 158 110 163 100 163C90 163 82 158 74 148C64 132 62 110 64 88Z" fill="url(#pSkin)"/>
+<g clip-path="url(#pJaw)"><rect x="60" y="108" width="80" height="60" fill="url(#pStub)" opacity=".85"/></g>
+<path d="M66 70C62 80 62 92 64 100M134 70C138 80 138 92 136 100" stroke="#8c8278" stroke-width="5" stroke-linecap="round" opacity=".9"/>
+<ellipse cx="80" cy="118" rx="14" ry="10" fill="url(#pFlush)"/><ellipse cx="120" cy="118" rx="14" ry="10" fill="url(#pFlush)"/>
+<path d="M60 66C62 40 80 30 100 30C122 30 140 40 140 66L140 72L60 72Z" fill="url(#pCap)"/>
+<path d="M100 30V72" stroke="#7a360c" stroke-width="1.5" opacity=".6"/>
+<path d="M74 40Q80 52 76 66" stroke="#fff" stroke-width="3" opacity=".12" fill="none"/>
+<ellipse cx="116" cy="48" rx="6" ry="4" fill="#3a1a08" opacity=".35"/>
+<path d="M56 70Q100 64 144 70L150 80Q100 86 50 80Z" fill="#6e330c"/>
+<path d="M50 80Q100 86 150 80L148 83Q100 90 52 83Z" fill="#3e1c06"/>
+<rect x="62" y="82" width="76" height="12" fill="url(#pCapShade)"/>
+<path d="M78 90Q88 88 96 92M104 92Q112 88 122 90" stroke="#9a5a48" stroke-width="1.4" fill="none" opacity=".7"/>
+<path d="M96 88V98M104 88V98" stroke="#9a4c3c" stroke-width="1.6" opacity=".7"/>
+<path d="M72 96L96 104" stroke="#5e5048" stroke-width="7" stroke-linecap="round"/>
+<path d="M128 96L104 104" stroke="#5e5048" stroke-width="7" stroke-linecap="round"/>
+<path d="M74 94L78 99M80 95L84 101M86 97L90 103M126 94L122 99M120 95L116 101M114 97L110 103" stroke="#8c7e74" stroke-width="1.4"/>
+<ellipse cx="84" cy="110" rx="9" ry="6" fill="#f3e4dc"/><ellipse cx="116" cy="110" rx="9" ry="6" fill="#f3e4dc"/>
+<path d="M76 110H92M108 110H124M78 113L86 111M114 111L122 113" stroke="#d65a5a" stroke-width=".8" opacity=".8"/>
+<circle cx="86" cy="111" r="4" fill="#5a3b24"/><circle cx="113" cy="112" r="4" fill="#5a3b24"/>
+<circle cx="86" cy="111" r="1.8" fill="#111"/><circle cx="113" cy="112" r="1.8" fill="#111"/>
+<circle cx="87.3" cy="109.6" r=".9" fill="#fff" opacity=".8"/><circle cx="114.3" cy="110.6" r=".9" fill="#fff" opacity=".8"/>
+<path d="M74 106Q84 101 94 106L94 109Q84 105 74 109Z" fill="#c9785f"/>
+<path d="M106 106Q116 101 126 106L126 109Q116 105 106 109Z" fill="#c9785f"/>
+<path d="M76 118Q84 123 93 118M107 118Q116 123 124 118" stroke="#9a4c3c" stroke-width="1.6" fill="none"/>
+<path d="M78 121Q85 125 91 121M109 121Q116 125 122 121" stroke="#b86a58" stroke-width="1" fill="none" opacity=".7"/>
+<path d="M98 104Q95 118 92 126" stroke="#b8664f" stroke-width="2" fill="none" opacity=".7"/>
+<path d="M91 129C90 121 95 116 100 116C106 116 110 121 109 129C109 134 105 136 100 136C95 136 91 134 91 129Z" fill="url(#pNose)"/><path d="M89 130Q88 134 92 135M111 130Q112 134 108 135" stroke="#b25a4a" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+<ellipse cx="97" cy="123" rx="2.6" ry="1.6" fill="#ffc2b8" opacity=".5"/>
+<ellipse cx="96" cy="134" rx="2.2" ry="1.3" fill="#4a1418"/><ellipse cx="104" cy="134" rx="2.2" ry="1.3" fill="#4a1418"/>
+<path d="M84 128Q80 140 82 150M116 128Q120 140 118 150" stroke="#9a4c3c" stroke-width="1.8" fill="none" opacity=".75"/>
+<path d="M84 148Q100 142 116 148Q118 158 112 160Q100 166 88 160Q82 158 84 148Z" fill="#2a0c0c"/>
+<path d="M88 156Q100 160 112 156L111 159Q100 162 89 159Z" fill="#d8cda0"/>
+<path d="M92 160Q100 156 108 160Q104 163 100 163Q96 163 92 160Z" fill="#b8404a"/>
+<path d="M80 144C86 136 94 138 100 140C106 138 114 136 120 144C116 150 108 146 100 147C92 146 84 150 80 144Z" fill="#6e625a"/>
+<path d="M84 143L86 147M89 141L90 146M94 140L95 145M106 140L105 145M111 141L110 146M116 143L114 147" stroke="#9c928a" stroke-width="1"/>
+<path d="M128 98Q132 106 129 112" stroke="#bfe6ff" stroke-width="2.4" fill="none" stroke-linecap="round" opacity=".85"/>
+<path d="M152 260C154 230 156 206 162 186L182 190C180 214 176 236 174 260Z" fill="url(#pPlaid)"/>
+<path d="M152 260C154 230 156 206 162 186L182 190C180 214 176 236 174 260Z" fill="#000" opacity=".25"/>
+<g transform="translate(-10 4) rotate(8 178 150)">
+  <rect x="164" y="104" width="30" height="66" rx="5" fill="url(#pCan)"/>
+  <ellipse cx="179" cy="104" rx="15" ry="4" fill="#d9d9d9"/><ellipse cx="179" cy="104" rx="11" ry="2.6" fill="#a8a8a8"/>
+  <rect x="164" y="120" width="30" height="36" fill="url(#pLab)"/>
+  <text x="179" y="137" text-anchor="middle" font-family="Saira Condensed,Arial Narrow,sans-serif" font-weight="800" font-size="13" fill="#f5d36a">10,2</text>
+  <text x="179" y="150" text-anchor="middle" font-family="Saira Condensed,Arial Narrow,sans-serif" font-weight="700" font-size="6.5" fill="#e8c46a" letter-spacing=".5">STARKÖL</text>
+  <path d="M170 106V168" stroke="#fff" stroke-width="2.5" opacity=".35"/>
+  <path d="M188 128Q185 134 189 140" stroke="#5a4a18" stroke-width="1.2" fill="none" opacity=".6"/>
+  <circle cx="175" cy="162" r="1.2" fill="#fff" opacity=".6"/><circle cx="186" cy="114" r="1" fill="#fff" opacity=".6"/>
+</g>
+<g transform="translate(-10 4)"><path d="M160 168C156 152 162 138 172 136L190 138C198 144 198 158 192 168C184 176 168 178 160 168Z" fill="#d48a70"/>
+<path d="M166 146Q180 142 194 146M165 155Q180 151 195 155M166 163Q180 160 193 163" stroke="#9a4c3c" stroke-width="1.6" fill="none"/>
+<path d="M160 150Q156 142 164 138" stroke="#b86a58" stroke-width="5" stroke-linecap="round" fill="none"/></g>
+<g opacity=".75"><circle cx="150" cy="46" r="5" fill="none" stroke="#fff" stroke-width="1.8"/><circle cx="162" cy="34" r="3.5" fill="none" stroke="#fff" stroke-width="1.6"/><circle cx="170" cy="24" r="2.2" fill="none" stroke="#fff" stroke-width="1.4"/></g>
+</svg>
+<div class="pbub"><small>PELLE, VERKMÄSTARE</small><span id="pelleTxt"></span></div>
+</div>
+<div class="tut" id="tut" hidden><div class="card"><small id="tutStep"></small><h3 id="tutH"></h3><p id="tutP"></p><button class="big" id="tutNext">FATTAT</button></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $=id=>document.getElementById(id);
+const cv=$('c'),ctx=cv.getContext('2d',{alpha:false});
+const workC=document.createElement('canvas'),wctx=workC.getContext('2d');
+let W=1,H=1,DPR=1;
+
+const MATS={
+  steel:{n:'Stål',plate:['#5d626b','#7b808a','#4a4e56'],scale:true,bead:['#e1e3e7','#9ea2ab','#4b4f58'],tint:1,heat:2.1,spd:1},
+  alu:{n:'Aluminium',plate:['#a9aeb5','#c9cdd3','#8d9299'],scale:false,bead:['#ffffff','#d4d8de','#8e939b'],tint:.15,heat:1.75,spd:1.35},
+  inox:{n:'Rostfritt',plate:['#8d8f93','#b2b4b8','#76787c'],scale:false,bead:['#efe6d4','#bfae90','#6c6048'],tint:1.6,heat:1.95,spd:1.1}
+};
+const GASES={M21:'M21 – Ar + 18 % CO₂',C1:'C1 – 100 % CO₂',M12:'M12 – Ar + 2 % CO₂',I1:'I1 – 100 % Argon'};
+const JOBS=[
+  {a:3,n:'Rak stumsvets',d:'Två stålplåtar kant i kant. Håll jämn fart och följ fogen.',mat:'steel',mm:3,v:18,w:5,dia:.8,gas:'M21',flow:[12,16],path:[[.08,.5],[.92,.5]]},
+  {a:3,n:'Diagonal fog',d:'Samma teknik, men snett över plåten.',mat:'steel',mm:3,v:18,w:5,dia:.8,gas:'M21',flow:[12,16],path:[[.1,.8],[.9,.22]]},
+  {a:3,n:'Bågsvets',d:'En böjd fog. Följ kurvan utan att tappa farten.',mat:'steel',mm:4,v:20,w:6.5,dia:1,gas:'M21',flow:[12,17],curve:'arc'},
+  {a:2,n:'Aluminium',d:'Aluminium leder bort värme fort men bränner igenom lätt. Kör snabbare, och tänk på gasen.',mat:'alu',mm:2,v:16.5,w:8,dia:1,gas:'I1',flow:[15,20],path:[[.08,.62],[.92,.38]]},
+  {a:4,n:'Rörfläns',d:'Svetsa runt hela flänsen i en cirkel.',mat:'steel',mm:5,v:21.5,w:7.5,dia:1,gas:'M21',flow:[13,18],curve:'circle'},
+  {a:3,n:'S-kurva rostfritt',d:'Rostfritt får fina anlöpningsfärger. Låt det inte bli för varmt.',mat:'inox',mm:3,v:19,w:5.5,dia:.8,gas:'M12',flow:[12,16],curve:'s'},
+  {a:3,n:'Trappräcke',d:'L-formad fog på ett räcke. Håll farten genom hörnet.',mat:'steel',mm:4,v:20,w:6.5,dia:1,gas:'M21',flow:[12,17],path:[[.12,.18],[.12,.8],[.9,.8]]},
+  {a:5,n:'Släpvagnsdrag',d:'Tjock plåt, U-formad fog. Plåten blir varm, var beredd att öka farten mot slutet.',mat:'steel',mm:6,v:23,w:8.5,dia:1.2,gas:'M21',flow:[14,18],path:[[.14,.18],[.14,.78],[.86,.78],[.86,.18]]},
+  {a:4,n:'Tryckkärl',d:'Rostfritt tryckkärl. Besiktningen godkänner inga porer och inga kratrar.',mat:'inox',mm:4,v:20,w:6,dia:1,gas:'M12',flow:[12,16],curve:'circle',strict:true},
+  {a:5,n:'Mästarprovet',d:'Sicksackfog i tjock plåt. Inga inställningstips den här gången. Gör ett eget WPS.',mat:'steel',mm:6,v:23,w:8.5,dia:1.2,gas:'M21',flow:[14,18],path:[[.07,.3],[.3,.72],[.5,.28],[.7,.72],[.93,.3]],hide:true}
+];
+const DIAS=[.8,1,1.2];
+const PAY=[350,400,600,800,1000,900,1300,1600,2200,3000];
+const RANKS=[[0,'Lärling'],[2000,'Svetsare'],[6000,'Certifierad svetsare'],[15000,'Verkmästare'],[30000,'Svetsmästare']];
+const SHOP={
+  machine:{n:'Svetsaggregat',tab:'gear',items:[{id:'m0',n:'MIG 250',d:'Verkstadens gamla trotjänare.',p:0},{id:'m1',n:'Pro 320 Puls',d:'Pulsad båge: mindre sprut, jämnare svets och större marginal på farten.',p:2500},{id:'m2',n:'Synergic 400',d:'Synergistyrd. Den stabilaste bågen du kan köpa.',p:6000}]},
+  reg:{n:'Gas & regulator',tab:'gear',items:[{id:'r0',n:'Standardregulator',d:'Gör jobbet. Oftast.',p:0},{id:'r1',n:'Precisionsregulator',d:'Stabilt flöde som halverar porerna.',p:1200},{id:'r2',n:'Flödesmätare Pro',d:'Exakt gasflöde och nästan inga porer.',p:3000}]},
+  helmet:{n:'Svetshjälm',tab:'gear',items:[{id:'h0',n:'Standardhjälm',d:'Mörkt glas. Svårt att se fogen.',p:0},{id:'h1',n:'Automathjälm',d:'Ljusare glas, så du ser fogen tydligare.',p:1500},{id:'h2',n:'Pro-hjälm True Color',d:'Klar vy. Fogen lyser upp när bågen brinner.',p:4000}]},
+  frame:{n:'Svetshjälmar',tab:'cos',items:[{id:'f0',n:'Svart matt',p:0,css:'linear-gradient(#111,#111)'},{id:'f1',n:'Varning',p:300,css:'repeating-linear-gradient(45deg,#ffc21a 0 12px,#161616 12px 24px)'},{id:'f2',n:'Kolfiber',p:600,css:'repeating-linear-gradient(45deg,#1b1b1d 0 4px,#34353a 4px 8px),#222'},{id:'f3',n:'Flammor',p:900,css:'repeating-linear-gradient(70deg,#ff3d00 0 10px,#ffb300 10px 16px,#2a0c00 16px 28px)'},{id:'f4',n:'Kamouflage',p:700,css:'radial-gradient(circle at 20% 30%,#3d4a2a 0 18%,transparent 19%),radial-gradient(circle at 70% 60%,#6b6a3c 0 20%,transparent 21%),radial-gradient(circle at 40% 80%,#232a18 0 15%,transparent 16%),#4f5a36'},{id:'f5',n:'Tre Kronor-blå',p:800,css:'linear-gradient(90deg,#006aa7 0 38%,#fecc02 38% 50%,#006aa7 50% 100%)'},{id:'f10',n:'Rosa glitter',p:1000,css:'radial-gradient(circle,#fff 0 1.5px,transparent 2.5px) 0 0/14px 14px,#e0529c'},{id:'f6',n:'Dödskalle',p:1200,css:'radial-gradient(circle,#eeeae0 0 3px,transparent 4px) 0 0/28px 28px,#141414'},{id:'f9',n:'Tiger',p:1500,css:'repeating-linear-gradient(115deg,#f08a1a 0 16px,#141414 16px 22px)'},{id:'f11',n:'Blixten',p:1800,css:'linear-gradient(135deg,#1d3f8f 0 45%,#ffd23a 45% 55%,#1d3f8f 55%)'},{id:'f8',n:'Neon Cyber',p:2500,css:'repeating-linear-gradient(90deg,#0b0c1a 0 14px,#18e0ff 14px 16px,#0b0c1a 16px 30px,#ff3ecf 30px 32px)'},{id:'f7',n:'Guldkrom',p:5000,css:'linear-gradient(135deg,#8a6a1a,#f5d77a 30%,#b8902a 50%,#fff0b0 70%,#8a6a1a)'}]},
+  glove:{n:'Svetshandskar',tab:'cos',items:[{id:'g0',n:'Läder',p:0,c:'#8a5a32'},{id:'g1',n:'Svarta',p:250,c:'#1e1f24'},{id:'g2',n:'Neonorange',p:400,c:'#ff7a1a'},{id:'g3',n:'Kamo',p:400,c:'#4f5a36'},{id:'g4',n:'Guld',p:2000,c:'#d4ac3a'}]},
+  spark:{n:'Gnistfärg',tab:'cos',items:[{id:'s0',n:'Klassisk',p:0,pal:[[255,250,210],[255,190,80],[255,110,30]]},{id:'s1',n:'Blå plasma',p:500,pal:[[225,242,255],[120,190,255],[60,110,255]]},{id:'s2',n:'Giftgrön',p:500,pal:[[235,255,225],[130,255,120],[40,190,70]]},{id:'s3',n:'Rosa',p:500,pal:[[255,232,250],[255,120,220],[210,40,170]]},{id:'s4',n:'Regnbåge',p:1500,rainbow:true,pal:[[255,90,90],[90,255,140],[110,140,255]]}]}
+};
+const COUPON_MM=60;
+
+const EXAMPLE_WPS={id:'ex1',ex:true,name:'WPS-001',mat:'steel',mm:3,joint:'BW',pos:'PA',gas:'M21',flow:14,dia:.8,stick:12,v:18,w:5,ts:420,note:'Exempel. Stumsvets 3 mm stål, spalt 1 mm.'};
+let save={stars:[],best:[],wps:[],machine:null};
+try{const s=JSON.parse(localStorage.getItem('svets'));if(s)save=Object.assign(save,s)}catch(e){}
+if(!Array.isArray(save.wps))save.wps=[];
+if(typeof save.money!=='number')save.money=0;if(typeof save.earned!=='number')save.earned=0;
+if(!Array.isArray(save.owned))save.owned=[];
+save.eq=Object.assign({machine:'m0',reg:'r0',helmet:'h0',frame:'f0',glove:'g0',spark:'s0'},save.eq||{});
+const tier=slot=>Math.max(0,SHOP[slot].items.findIndex(i=>i.id===save.eq[slot]));
+const eqItem=slot=>SHOP[slot].items[tier(slot)];
+const kr=n=>Math.round(n).toLocaleString('sv-SE').replace(/\u00a0/g,' ')+' kr';
+function rankOf(e){let i=0;for(let k=0;k<RANKS.length;k++)if(e>=RANKS[k][0])i=k;return i}
+if(!save.wps.some(w=>w.id==='ex1')&&!save.exRemoved)save.wps.unshift(Object.assign({},EXAMPLE_WPS));
+const persist=()=>{try{localStorage.setItem('svets',JSON.stringify(save))}catch(e){}};
+const MDEF={v:18,w:5,gas:'M21',flow:14,dia:.8,stick:12,wps:'',proc:'mig',tA:100,tAC:'DC',tW:2.4,tGas:'I1',tFlow:8,eA:100,eType:'E6013',eDia:3.2};
+let M=Object.assign({},MDEF,save.machine||{});
+
+const amps=(dia,w)=>Math.round(dia<.9?12+17*w:dia<1.1?20+22*w:30+28*w);
+const procOf=g=>g==='I1'?'131 MIG':'135 MAG';
+const heatIn=(v,i,ts)=>ts>0?(0.8*v*i*60/(ts*1000)):0;
+const fmt=(n,d=1)=>Number(n).toFixed(d).replace('.',',');
+
+/* ---------- audio ---------- */
+let ac=null,noiseBuf=null,arcSnd=null;
+function audio(){if(ac)return ac;try{ac=new (window.AudioContext||window.webkitAudioContext)();const len=ac.sampleRate*2;noiseBuf=ac.createBuffer(1,len,ac.sampleRate);const d=noiseBuf.getChannelData(0);for(let i=0;i<len;i++)d[i]=Math.random()*2-1}catch(e){ac=null}return ac}
+function arcStart(){if(!audio()||arcSnd)return;try{ac.resume();const src=ac.createBufferSource();src.buffer=noiseBuf;src.loop=true;
+  const bp=ac.createBiquadFilter();bp.type='bandpass';bp.frequency.value=E&&E.proc==='tig'?6500:E&&E.proc==='mma'?2400:3200;bp.Q.value=E&&E.proc==='tig'?.3:.6;
+  const hp=ac.createBiquadFilter();hp.type='highpass';hp.frequency.value=900;
+  const g=ac.createGain();g.gain.value=0;
+  const hum=ac.createOscillator();hum.type='sawtooth';hum.frequency.value=100;const hg=ac.createGain();hg.gain.value=.025;
+  src.connect(bp).connect(hp).connect(g).connect(ac.destination);hum.connect(hg).connect(ac.destination);
+  src.start();hum.start();arcSnd={src,g,hum,hg}}catch(e){}}
+function arcStop(){if(!arcSnd)return;const s=arcSnd;arcSnd=null;try{const t=ac.currentTime;s.g.gain.setTargetAtTime(0,t,.02);s.hg.gain.setTargetAtTime(0,t,.02);s.src.stop(t+.15);s.hum.stop(t+.15)}catch(e){}}
+let crT=0;function crackle(bad,dt){if(!arcSnd)return;if(E&&E.proc==='tig'){arcSnd.g.gain.setTargetAtTime(.07,ac.currentTime,.05);return}if(E&&E.proc==='mma')bad+=.35;crT-=dt;if(crT>0)return;crT=.02+Math.random()*.03;const base=.12+bad*.25;arcSnd.g.gain.setValueAtTime(base*(.35+Math.random()*(1+bad)),ac.currentTime)}
+function pop(){if(!audio())return;try{const t=ac.currentTime,s=ac.createBufferSource(),g=ac.createGain(),f=ac.createBiquadFilter();s.buffer=noiseBuf;f.type='lowpass';f.frequency.value=900;g.gain.setValueAtTime(.6,t);g.gain.exponentialRampToValueAtTime(.001,t+.3);s.connect(f).connect(g).connect(ac.destination);s.start(t);s.stop(t+.3)}catch(e){}}
+const buzz=p=>{try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}};
+let toastT;function toast(t){const el=$('toast');el.textContent=t;el.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('show'),1600)}
+
+/* ---------- sprites (pre-rendered, no gradients per frame) ---------- */
+function sprite(size,stops){const c=document.createElement('canvas');c.width=c.height=size;const g=c.getContext('2d'),r=size/2,gr=g.createRadialGradient(r,r,0,r,r,r);stops.forEach(([o,col])=>gr.addColorStop(o,col));g.fillStyle=gr;g.fillRect(0,0,size,size);return c}
+const HEAT=[[255,255,245],[255,236,160],[255,180,70],[240,100,30],[170,40,15]].map(([r,g,b])=>sprite(64,[[0,`rgba(${r},${g},${b},1)`],[.5,`rgba(${r},${g},${b},.55)`],[1,`rgba(${r},${g},${b},0)`]]));
+const BLOOM=sprite(128,[[0,'rgba(170,215,255,.55)'],[.25,'rgba(120,170,255,.18)'],[1,'rgba(80,120,255,0)']]);
+const CORE=sprite(64,[[0,'rgba(255,255,255,1)'],[.35,'rgba(255,245,210,.95)'],[.7,'rgba(255,170,60,.5)'],[1,'rgba(255,120,30,0)']]);
+const SMOKE=sprite(64,[[0,'rgba(160,160,160,.5)'],[1,'rgba(160,160,160,0)']]);
+const SOOT=sprite(64,[[0,'rgba(20,18,16,.5)'],[.6,'rgba(30,26,22,.2)'],[1,'rgba(30,26,22,0)']]);
+function tintSprite(k){return sprite(128,[[0,'rgba(0,0,0,0)'],[.22,`rgba(225,180,90,${.07*k})`],[.4,`rgba(190,110,70,${.05*k})`],[.6,`rgba(110,70,160,${.05*k})`],[.85,`rgba(60,120,200,${.035*k})`],[1,'rgba(60,120,200,0)']])}
+const TINTS={};
+const GRIND=sprite(64,[[0,'rgba(215,220,228,.55)'],[.6,'rgba(200,206,215,.25)'],[1,'rgba(200,206,215,0)']]);
+
+/* ---------- engine ---------- */
+let hudTopH=0,hudBotH=0;let E=null,mode='home',helmet=true,lens=0,dirty=true;
+function layout(){
+  W=innerWidth;H=innerHeight;DPR=Math.min(devicePixelRatio||1,2);
+  if(W*H*DPR*DPR>2.2e6)DPR=Math.sqrt(2.2e6/(W*H));
+  for(const c of [cv,workC,slagC]){c.width=Math.round(W*DPR);c.height=Math.round(H*DPR)}
+  ctx.setTransform(DPR,0,0,DPR,0,0);wctx.setTransform(DPR,0,0,DPR,0,0);sctx.setTransform(DPR,0,0,DPR,0,0);
+}
+function plateRect(){
+  const idle=mode==='home'||mode==='wps'||mode==='shop'||mode==='char';const top=(idle?H*.2:(hudTopH||190)+10),bot=(idle?H*.52:(hudBotH||70)+12);
+  const w=Math.min(W-28,560),ah=Math.max(120,H-top-bot),h=Math.min(ah*.94,w*.78);
+  return{x:(W-w)/2,y:top+(ah-h)/2,w,h};
+}
+function buildSeam(job,P){
+  let pts=[];const at=(u,v)=>({x:P.x+u*P.w,y:P.y+v*P.h});
+  if(job.curve==='arc'){for(let i=0;i<=120;i++){const t=i/120;pts.push(at(.08+.84*t,.72-.46*Math.sin(Math.PI*t)))}}
+  else if(job.curve==='circle'){const cx=P.x+P.w/2,cy=P.y+P.h/2,r=Math.min(P.w,P.h)*.34;for(let i=0;i<=200;i++){const a=-Math.PI/2+i/200*Math.PI*2*.985;pts.push({x:cx+Math.cos(a)*r,y:cy+Math.sin(a)*r})}}
+  else if(job.curve==='s'){for(let i=0;i<=140;i++){const t=i/140;pts.push(at(.08+.84*t,.5+.24*Math.sin(t*Math.PI*2)))}}
+  else pts=job.path.map(([u,v])=>at(u,v));
+  const out=[pts[0]];
+  for(let i=1;i<pts.length;i++){const a=pts[i-1],b=pts[i],d=Math.hypot(b.x-a.x,b.y-a.y),n=Math.max(1,Math.ceil(d/2));for(let k=1;k<=n;k++)out.push({x:a.x+(b.x-a.x)*k/n,y:a.y+(b.y-a.y)*k/n})}
+  const cum=[0];for(let i=1;i<out.length;i++)cum.push(cum[i-1]+Math.hypot(out[i].x-out[i-1].x,out[i].y-out[i-1].y));
+  return{pts:out,cum,L:cum[cum.length-1]};
+}
+const rnd=(a,b)=>a+Math.random()*(b-a);
+function drawBase(job,P,S,r0){
+  const m=MATS[job.mat],c=wctx;
+  c.fillStyle='#1b1c1f';c.fillRect(0,0,W,H);
+  const g=Math.max(34,W/10);
+  c.fillStyle='#0b0b0d';for(let y=g/2;y<H;y+=g)for(let x=g/2;x<W;x+=g){c.beginPath();c.arc(x,y,g*.14,0,7);c.fill()}
+  c.strokeStyle='rgba(255,255,255,.05)';c.lineWidth=1;c.beginPath();for(let y=g/2;y<H;y+=g)for(let x=g/2;x<W;x+=g){c.moveTo(x+g*.14,y+1);c.arc(x,y+1,g*.14,0,Math.PI)}c.stroke();
+  const vg=c.createRadialGradient(W/2,H/2,Math.min(W,H)*.2,W/2,H/2,Math.max(W,H)*.75);vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,.6)');c.fillStyle=vg;c.fillRect(0,0,W,H);
+  c.save();c.shadowColor='rgba(0,0,0,.7)';c.shadowBlur=24;c.shadowOffsetY=10;c.fillStyle=m.plate[0];c.fillRect(P.x,P.y,P.w,P.h);c.restore();
+  const pg=c.createLinearGradient(P.x,P.y,P.x+P.w,P.y+P.h);pg.addColorStop(0,m.plate[1]);pg.addColorStop(.5,m.plate[0]);pg.addColorStop(1,m.plate[2]);c.fillStyle=pg;c.fillRect(P.x,P.y,P.w,P.h);
+  c.save();c.beginPath();c.rect(P.x,P.y,P.w,P.h);c.clip();
+  for(let i=0;i<P.h*3;i++){const y=P.y+Math.random()*P.h;c.strokeStyle=Math.random()<.5?`rgba(255,255,255,${rnd(.02,.07)})`:`rgba(0,0,0,${rnd(.03,.09)})`;c.lineWidth=rnd(.4,1.2);const x=P.x+Math.random()*P.w*.6;c.beginPath();c.moveTo(x,y);c.lineTo(x+rnd(40,P.w),y+rnd(-.5,.5));c.stroke()}
+  if(m.scale)for(let i=0;i<14;i++){const x=P.x+Math.random()*P.w,y=P.y+Math.random()*P.h,r=rnd(20,70);const sg=c.createRadialGradient(x,y,0,x,y,r);sg.addColorStop(0,'rgba(40,52,70,.22)');sg.addColorStop(1,'rgba(40,52,70,0)');c.fillStyle=sg;c.fillRect(x-r,y-r,r*2,r*2)}
+  c.restore();
+  c.strokeStyle='rgba(255,255,255,.22)';c.lineWidth=1;c.strokeRect(P.x+.5,P.y+.5,P.w-1,P.h-1);
+  c.strokeStyle='rgba(0,0,0,.5)';c.strokeRect(P.x+1.5,P.y+1.5,P.w-3,P.h-3);
+  const path=()=>{c.beginPath();S.pts.forEach((p,i)=>i?c.lineTo(p.x,p.y):c.moveTo(p.x,p.y))};
+  c.lineCap='round';c.lineJoin='round';
+  path();c.strokeStyle='rgba(0,0,0,.55)';c.lineWidth=r0*1.05;c.stroke();
+  path();c.strokeStyle='rgba(0,0,0,.85)';c.lineWidth=r0*.35;c.stroke();
+  c.save();c.translate(0,1.2);path();c.strokeStyle='rgba(255,255,255,.18)';c.lineWidth=1;c.stroke();c.restore();
+  const a=S.pts[0],b=S.pts[S.pts.length-1];
+  c.fillStyle='rgba(255,194,26,.9)';c.beginPath();c.arc(a.x,a.y,4,0,7);c.fill();
+  if(Math.hypot(a.x-b.x,a.y-b.y)>20){c.beginPath();c.arc(b.x,b.y,4,0,7);c.fill()}
+  c.font='700 11px "JetBrains Mono",monospace';c.textAlign='right';c.fillStyle='rgba(255,255,255,.35)';c.fillText(`${m.n.toUpperCase()} ${job.mm} MM · PROVBIT ${COUPON_MM} MM`,P.x+P.w-8,P.y+P.h-8);
+}
+function jobQuality(job,st){
+  if(st.proc==='tig')return qualityTig(job,st);if(st.proc==='mma')return qualityMma(job,st);
+  const vF=Math.max(-1,Math.min(1,(st.v-job.v)/4)),wF=Math.max(-1,Math.min(1,(st.w-job.w)/3));
+  const sqVW=Math.max(0,1-(vF*vF*.6+wF*wF*.4));
+  let gasQ=1;if(st.gas!==job.gas){if(job.gas==='I1')gasQ=.05;else if(st.gas==='I1')gasQ=.35;else if(job.gas==='M21'&&st.gas==='C1')gasQ=.8;else gasQ=.6}
+  const [lo,hi]=job.flow;const f=+st.flow;
+  const flowQ=f<=0?0:f<lo?Math.max(0,1-(lo-f)/8):f>hi?Math.max(.3,1-(f-hi)/10):1;
+  const di=Math.abs(DIAS.indexOf(+job.dia)-DIAS.indexOf(+st.dia));const diaQ=di===0?1:di===1?.75:.5;
+  const sk=+st.stick,stickQ=sk>=10&&sk<=15?1:Math.max(.4,1-(sk<10?10-sk:sk-15)/8);
+  const setQ=sqVW*.45+gasQ*.25+flowQ*.15+diaQ*.1+stickQ*.05;
+  const poro=Math.min(1,(1-flowQ)*1.1+(1-gasQ)*(job.gas==='I1'?1.2:.35));
+  const bad=Math.max(0,-vF)*.6+Math.max(0,wF)*.6+Math.abs(vF)*.2+(1-gasQ)*.5+(1-stickQ)*.4;
+  const soot=Math.min(1,(1-gasQ)*(job.gas==='I1'?1:.5)+(1-flowQ)*.6);
+  return{vF,wF,sqVW,gasQ,flowQ,diaQ,stickQ,setQ,poro,bad,soot};
+}
+function initJob(ji,st,demo){
+  const job=JOBS[ji],P=plateRect(),S=buildSeam(job,P),m=MATS[job.mat];
+  const r0=Math.max(6,P.w*.02);
+  drawBase(job,P,S,r0);
+  const n=Math.max(20,Math.ceil(S.L/(r0*.8)));
+  const q=jobQuality(job,st);
+  if(!TINTS[job.mat])TINTS[job.mat]=tintSprite(m.tint*(1+q.soot*0));
+  E=Object.assign({ji,job,m,P,S,r0,target:P.w*.12*m.spd,n,binLen:S.L/n,cov:new Uint8Array(n),heat:new Float32Array(n),burnt:new Uint8Array(n),
+    dimes:[],recent:[],sparks:[],smoke:[],burns:0,waste:0,pores:0,
+    tip:null,last:null,arc:false,sp:0,acc:0,still:0,dir:0,idx:0,
+    demo:!!demo,ds:0,done:false,t:0,started:false,arcT:0,goodT:0,dist:0,st:Object.assign({},st),glowSkip:0},q);
+  E.diaK=1+(DIAS.indexOf(+st.dia)-DIAS.indexOf(+job.dia))*.12;
+  E.proc=st.proc||'mig';E.P0=PROCS[E.proc];E.target*=E.P0.spd;if(E.proc!=='mig')E.diaK=1;E.rate=1.4;E.fill=save.opts.tig?1:.6;E.rodAng=null;E.lz=null;E.lSide=null;E.pid=null;E.sinceDip=0;E.dipT=0;E.rod=1;E.rodOut=false;E.slag=new Uint8Array(n);E.flakes=[];E.chipping=false;E.blobs=0;sctx.clearRect(0,0,W,H);
+  const mt=tier('machine'),rt=tier('reg'),ht=tier('helmet');
+  E.bad*=[1,.7,.45][mt];E.poro*=[1,.5,.2][rt];E.soot*=[1,.7,.4][rt];
+  E.thr=m.heat*(.74+job.mm*.07);
+  E.binR=new Float32Array(n);E.gougeB=new Float32Array(n);E.spats=[];E.tool='weld';E.grinding=false;E.grindT=0;E.gouges=0;E.repaired=false;E.offGrind=0;E.aReq=job.a;E.aLive=0;E.gsp=[];
+  E.band=[[.76,1.3],[.68,1.45],[.6,1.6]][mt];E.defects=[];E.craters=0;E.starts=0;E.gheat=0;E.endHold=0;E.lastDep=null;E.flow=0;E.bestFlow=0;E.sdK=[2.2,1.8,1.4][mt];E.rExp=[.5,.42,.35][mt];
+  E.lensMax=[.7,.58,.45][ht];E.seamVis=[.16,.3,.5][ht];
+  E.seamPath=new Path2D();S.pts.forEach((p,i)=>i?E.seamPath.lineTo(p.x,p.y):E.seamPath.moveTo(p.x,p.y));
+  const sp=eqItem('spark');E.pal=sp.pal;E.rainbow=!!sp.rainbow;E.glove=eqItem('glove').c;
+  dirty=true;
+}
+function nearest(p){
+  const pts=E.S.pts,N=pts.length;let bi=E.idx,bd=1e12;
+  const lo=Math.max(0,E.idx-80),hi=Math.min(N-1,E.idx+80);
+  for(let i=lo;i<=hi;i++){const d=(pts[i].x-p.x)**2+(pts[i].y-p.y)**2;if(d<bd){bd=d;bi=i}}
+  if(bd>(E.r0*4)**2){for(let i=0;i<N;i+=3){const d=(pts[i].x-p.x)**2+(pts[i].y-p.y)**2;if(d<bd){bd=d;bi=i}}for(let i=Math.max(0,bi-3);i<=Math.min(N-1,bi+3);i++){const d=(pts[i].x-p.x)**2+(pts[i].y-p.y)**2;if(d<bd){bd=d;bi=i}}}
+  E.idx=bi;return{s:E.S.cum[bi],d:Math.sqrt(bd)};
+}
+function onPlate(p){const P=E.P;return p.x>P.x&&p.x<P.x+P.w&&p.y>P.y&&p.y<P.y+P.h}
+
+function drawDime(x,y,r,ang){
+  const b=E.m.bead,c=wctx;
+  c.save();c.translate(x,y);c.rotate(ang);
+  const g=c.createRadialGradient(-r*.25,-r*.1,r*.1,0,0,r);g.addColorStop(0,b[0]);g.addColorStop(.55,b[1]);g.addColorStop(1,b[2]);
+  c.fillStyle=g;c.beginPath();c.arc(0,0,r,0,7);c.fill();
+  c.strokeStyle='rgba(20,20,24,.55)';c.lineWidth=Math.max(1,r*.13);c.beginPath();c.arc(-r*.08,0,r*.9,-1.15,1.15);c.stroke();
+  c.strokeStyle='rgba(255,255,255,.35)';c.lineWidth=Math.max(.8,r*.08);c.beginPath();c.arc(-r*.2,0,r*.72,-1,.9);c.stroke();
+  c.restore();
+}
+function drawTint(x,y,r){
+  const T=TINTS[E.job.mat];if(E.m.tint>0){const R=r*3.4;wctx.drawImage(T,x-R,y-R,R*2,R*2)}
+  if(E.soot>.05){const R=r*(2+E.soot*2);wctx.globalAlpha=Math.min(1,E.soot*.9);wctx.drawImage(SOOT,x-R,y-R,R*2,R*2);wctx.globalAlpha=1}
+}
+function pores(x,y,r){const n=1+Math.floor(Math.random()*2);for(let i=0;i<n;i++){const a=Math.random()*7,d=Math.random()*r*.6,px=x+Math.cos(a)*d,py=y+Math.sin(a)*d,rr=rnd(.8,Math.max(1.2,r*.22));wctx.fillStyle='#16161a';wctx.beginPath();wctx.arc(px,py,rr,0,7);wctx.fill();wctx.fillStyle='rgba(255,255,255,.35)';wctx.fillRect(px-rr*.6,py-rr*.8,rr*.5,rr*.4)}E.pores+=n;if(E.defects&&E.defects.length<160)E.defects.push({t:'P',x,y,n,s:nearest({x,y}).s})}
+function spatter(x,y){const c=wctx;const n=1+Math.floor(Math.random()*3);for(let i=0;i<n;i++){const a=Math.random()*7,d=rnd(E.r0*1.3,E.r0*5),px=x+Math.cos(a)*d,py=y+Math.sin(a)*d,rr=rnd(.8,2.4);if(E.spats&&E.spats.length<400)E.spats.push({x:px,y:py});c.fillStyle=E.m.bead[2];c.beginPath();c.arc(px,py,rr,0,7);c.fill();c.fillStyle='rgba(255,255,255,.4)';c.fillRect(px-rr*.4,py-rr*.5,rr*.5,rr*.5)}}
+function burnHole(x,y,r){
+  const c=wctx;c.save();c.translate(x,y);
+  c.fillStyle='#050505';c.beginPath();for(let i=0;i<14;i++){const a=i/14*Math.PI*2,rr=r*rnd(.7,1.05);i?c.lineTo(Math.cos(a)*rr,Math.sin(a)*rr):c.moveTo(Math.cos(a)*rr,Math.sin(a)*rr)}c.closePath();c.fill();
+  c.strokeStyle='rgba(60,40,30,.9)';c.lineWidth=2;c.stroke();c.restore();
+  E.recent.push({x,y,r:r*1.5,t:0,life:3.5});
+  for(let i=0;i<40;i++)spark(x,y,1.6);pop();buzz([40,30,60]);
+}
+function deposit(p){
+  const ratio=E.target/Math.max(E.sp,4);
+  let r=E.r0*Math.max(.5,Math.min(1.7,Math.pow(ratio,E.rExp)))*(1+E.vF*.3)*(1+E.wF*.12)*E.diaK;
+  if(E.still>.15)r=Math.min(E.r0*1.9,r*(1+E.still*.5));
+  if(E.proc==='tig')r*=(.58+.52*Math.min(1.5,E.fill));
+  const nr=nearest(p);
+  drawTint(p.x,p.y,r);drawDime(p.x,p.y,r,E.dir);
+  if(Math.random()<E.poro*.55)pores(p.x,p.y,r);
+  if(++E.glowSkip%2===0||E.recent.length<20)E.recent.push({x:p.x,y:p.y,r,t:0,life:2.6});
+  if(Math.random()<E.P0.spat+E.bad*(E.proc==='tig'?.1:.9)+Math.max(0,1/ratio-1.6)*.3)spatter(p.x,p.y);
+  E.dimes.push({r,d:nr.d,s:nr.s});E.lastDep={x:p.x,y:p.y,r,d:nr.d};
+  if(nr.d<r*.95){const lo=Math.max(0,Math.floor((nr.s-r*.8)/E.binLen)),hi=Math.min(E.n-1,Math.floor((nr.s+r*.8)/E.binLen)),rr=r*(1-Math.min(1,(nr.d/r)**2)*.5);for(let i=lo;i<=hi;i++){E.cov[i]=1;if(rr>E.binR[i])E.binR[i]=rr;if(E.proc==='mma')E.slag[i]=1}}
+  if(E.proc==='mma')slagDab(p.x,p.y,r);
+  if(E.defects)for(const d of E.defects)if(d.t==='K'&&!d.rm&&(d.x-p.x)**2+(d.y-p.y)**2<(E.r0*.9)**2){d.rm=true;if(!E.demo)toast('Kratern fylld')}
+  if(!E.demo)E.aLive=E.aReq*r/E.r0;
+  else if(nr.d>E.r0*2.2)E.waste++;
+}
+function heatUp(p,dt){
+  const nr=nearest(p);if(nr.d>E.r0*2.2)return;
+  const b=Math.min(E.n-1,Math.floor(nr.s/E.binLen)),k=dt*2.3*E.P0.heat*(1+E.vF*.5)*(E.endHold>0&&E.endHold<.6?.35:1);
+  for(let i=Math.max(0,b-2);i<=Math.min(E.n-1,b+2);i++){E.heat[i]+=k*(i===b?1.3:.8);
+    if(E.heat[i]+E.gheat>E.thr&&!E.burnt[i]){E.burnt[i]=1;E.burns++;E.heat[i]=0;burnHole(p.x,p.y,E.r0*.9);E.defects.push({t:'H',x:p.x,y:p.y,s:nr.s});if(!E.demo){setFb('GENOMBRÄNNING!','bad');pelle('burn',true)}}}
+}
+function spark(x,y,f=1){if(E.sparks.length>420)return;const a=Math.random()*Math.PI*2,s=rnd(90,420)*f;E.sparks.push({x,y,px:x,py:y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-rnd(40,200),life:rnd(.25,.85),t:0})}
+
+/* ---------- processes ---------- */
+const PROCS={mig:{n:'MIG/MAG',mach:'MIG 250',spd:1,heat:1,spat:.08,sparks:1,smoke:12},tig:{n:'TIG',mach:'TIG 200 AC/DC',spd:.6,heat:.62,spat:0,sparks:.1,smoke:3},mma:{n:'MMA',mach:'MMA 180 Inverter',spd:.85,heat:1.08,spat:.2,sparks:1.7,smoke:26}};
+const TUNG=[1.6,2.4,3.2],EDIA=[2.5,3.2,4];
+function ideal(job){
+  const tigA=Math.round((job.mat==='alu'?44:34)*job.mm/5)*5,tW=job.mm<=3?1.6:job.mm<=5?2.4:3.2,tAC=job.mat==='alu'?'AC':'DC',tFlow=job.mat==='alu'?[8,14]:[6,12];
+  const eDia=job.mm<=3?2.5:job.mm<=5?3.2:4,eA={2.5:75,3.2:110,4:155}[eDia],eType=(job.strict||job.mm>=6)?'E7018':'E6013';
+  return{tigA,tW,tAC,tFlow,eDia,eA,eType};
+}
+function qualityTig(job,st){
+  const I=ideal(job),aF=Math.max(-1,Math.min(1,(st.tA-I.tigA)/(I.tigA*.28)));
+  const sqVW=Math.max(0,1-aF*aF*.8),gasQ=st.tGas==='I1'?1:.1,acQ=st.tAC===I.tAC?1:(job.mat==='alu'?.15:.3);
+  const f=+st.tFlow,[lo,hi]=I.tFlow,flowQ=f<=0?0:f<lo?Math.max(0,1-(lo-f)/6):f>hi?Math.max(.3,1-(f-hi)/8):1;
+  const di=Math.abs(TUNG.indexOf(+st.tW)-TUNG.indexOf(I.tW)),diaQ=di===0?1:di===1?.8:.6;
+  const setQ=sqVW*.45+gasQ*.15+acQ*.2+flowQ*.12+diaQ*.08;
+  const aluDC=job.mat==='alu'&&st.tAC!=='AC';
+  return{vF:aF,wF:0,sqVW,gasQ,flowQ,diaQ,stickQ:1,acQ,setQ,poro:Math.min(1,(1-flowQ)*1.1+(1-gasQ)*.8+(aluDC?.9:0)),bad:Math.abs(aF)*.25+(1-acQ)*.5,soot:Math.min(1,(1-gasQ)*.8+(aluDC?.8:0)+(1-flowQ)*.4)};
+}
+function qualityMma(job,st){
+  const I=ideal(job),aF=Math.max(-1,Math.min(1,(st.eA-I.eA)/(I.eA*.25)));
+  const sqVW=Math.max(0,1-aF*aF*.8),di=Math.abs(EDIA.indexOf(+st.eDia)-EDIA.indexOf(I.eDia)),diaQ=di===0?1:di===1?.7:.45;
+  const typeQ=st.eType===I.eType?1:I.eType==='E7018'?.55:.9;
+  return{vF:aF,wF:0,sqVW,gasQ:typeQ,flowQ:1,diaQ,stickQ:1,typeQ,setQ:sqVW*.55+diaQ*.25+typeQ*.2,poro:(1-typeQ)*.35,bad:.3+Math.abs(aF)*.4+(1-diaQ)*.3,soot:.15};
+}
+function procRec(j){
+  const I=ideal(j),m=MATS[j.mat].n.toLowerCase(),p=M.proc;
+  if(j.hide)return'Ingen tabell på det här jobbet. Använd ditt eget WPS eller din erfarenhet.';
+  if(p==='tig')return`Tabell TIG ${j.mm} mm ${m}: <b>${I.tigA-10}–${I.tigA+10} A</b> · <b>${I.tAC}</b> · <b>I1 argon</b> · <b>${I.tFlow[0]}–${I.tFlow[1]} l/min</b> · <b>volfram Ø ${fmt(I.tW)}</b>. Doppa tråden i jämn takt.`;
+  if(p==='mma')return j.mat==='alu'?'<b style="color:var(--bad)">Elektrodsvetsning fungerar inte på aluminium.</b> Välj MIG eller TIG.':`Tabell MMA ${j.mm} mm ${m}: <b>${I.eA-10}–${I.eA+10} A</b> · <b>elektrod Ø ${fmt(I.eDia)}</b> · <b>${I.eType==='E7018'?'basisk E7018':'rutil E6013'}</b>. Knacka bort slaggen innan besiktning.`;
+  return`Tabell ${j.mm} mm ${m}: <b>${fmt(j.v-.5)}–${fmt(j.v+.5)} V</b> · <b>${fmt(j.w-.5)}–${fmt(j.w+.5)} m/min</b> · <b>${j.gas}</b> · <b>${j.flow[0]}–${j.flow[1]} l/min</b> · <b>Ø ${fmt(j.dia)}</b> · <b>utstick 10–15 mm</b>`;
+}
+function setProc(p,silent){
+  M.proc=p;save.machine=M;persist();
+  document.querySelectorAll('#procSeg button').forEach(b=>b.classList.toggle('on',b.dataset.p===p));
+  $('gMig').hidden=p!=='mig';$('gTig').hidden=p!=='tig';$('gMma').hidden=p!=='mma';
+  $('machName').textContent=PROCS[p].mach;$('wpsRow').hidden=p!=='mig';
+  const j=JOBS[cur];$('rec').innerHTML=procRec(j);
+  const blocked=p==='mma'&&j.mat==='alu';$('strike').disabled=blocked;$('strike').style.opacity=blocked?.4:1;
+  lcd();if($('assist'))renderAssist();if(!silent)tone2(p==='tig'?880:p==='mma'?300:560);
+}
+function tone2(f){if(!audio())return;try{const t=ac.currentTime,o=ac.createOscillator(),g=ac.createGain();o.type='square';o.frequency.value=f;g.gain.setValueAtTime(.05,t);g.gain.exponentialRampToValueAtTime(.0001,t+.08);o.connect(g).connect(ac.destination);o.start(t);o.stop(t+.09)}catch(e){}}
+
+/* TIG filler, MMA electrode & slag */
+const slagC=document.createElement('canvas'),sctx=slagC.getContext('2d');
+function dip(auto){
+  if(!E||E.proc!=='tig'||mode!=='weld')return;
+  const I=1/(2.2*Math.max(.35,Math.min(1.6,E.sp/E.target||1))),q=(E.sinceDip||9)/I;
+  if(E.arc&&!auto){if(q<.72)dipLabel('TÄTT','warn');else if(q>1.35)dipLabel('GLEST','warn');else{dipLabel('PERFEKT','good');E.dipStreak=(E.dipStreak||0)+1}}
+  E.sinceDip=0;E.rate+=1/.9;E.dipT=.18;if(!auto){tone2(q>=.72&&q<=1.35?1500:1100);buzz(8)}dirty=true;
+  if(!auto&&E.fill>1.45&&E.arc){E.blobs=(E.blobs||0)+1;if(E.blobs===4)pelle('tig',true)}
+}
+let dipLT=0;function dipLabel(t,c){const el=$('dipLbl');el.textContent=t;el.className='dlbl '+c;clearTimeout(dipLT);dipLT=setTimeout(()=>{el.textContent='DOPPA';el.className='dlbl'},450)}
+function newRod(){if(!E||E.proc!=='mma')return;E.rodsUsed=(E.rodsUsed||1)+1;E.rod=1;E.rodOut=false;tone2(420);buzz(15);$('rodBtn').classList.remove('warn');toast('Ny elektrod i tången')}
+function slagDab(x,y,r){
+  const c=sctx;c.save();c.translate(x,y);
+  const g=c.createRadialGradient(-r*.3,-r*.3,r*.1,0,0,r*1.1);g.addColorStop(0,'#5a4a3a');g.addColorStop(.6,'#3a2e24');g.addColorStop(1,'#1e1812');
+  c.fillStyle=g;c.beginPath();c.arc(0,0,r*1.08,0,7);c.fill();
+  c.fillStyle='rgba(150,120,80,.25)';c.beginPath();c.arc(-r*.3,-r*.35,r*.3,0,7);c.fill();c.restore();
+}
+function chipAt(p,dt){
+  const R=E.r0*1.7;sctx.save();sctx.globalCompositeOperation='destination-out';sctx.beginPath();sctx.arc(p.x,p.y,R,0,7);sctx.fill();sctx.restore();
+  const nr=nearest(p);if(nr.d<R){const lo=Math.max(0,Math.floor((nr.s-R)/E.binLen)),hi=Math.min(E.n-1,Math.floor((nr.s+R)/E.binLen));for(let i=lo;i<=hi;i++)E.slag[i]=0}
+  E.chipT=(E.chipT||0)-dt;if(E.chipT<=0){E.chipT=.07;clack();for(let i=0;i<3;i++)E.flakes.push({x:p.x,y:p.y,vx:rnd(-120,120),vy:rnd(-160,-40),t:0,life:rnd(.4,.8),s:rnd(1.5,3.5)})}
+}
+function clack(){if(!audio())return;try{const t=ac.currentTime,s=ac.createBufferSource(),f=ac.createBiquadFilter(),g=ac.createGain();s.buffer=noiseBuf;f.type='bandpass';f.frequency.value=2400+Math.random()*1200;f.Q.value=3;g.gain.setValueAtTime(.25,t);g.gain.exponentialRampToValueAtTime(.001,t+.05);s.connect(f).connect(g).connect(ac.destination);s.start(t,Math.random());s.stop(t+.06)}catch(e){}}
+function slagLeft(){if(!E||E.proc!=='mma')return 0;let s=0,c=0;const m=E.r0*.35;for(let i=0;i<E.n;i++)if(E.binR[i]>m){c++;s+=E.slag[i]}return c?s/c:0}
+function seamAng(){const P=E.S.pts,i=E.idx,a=P[Math.max(0,i-6)],b=P[Math.min(P.length-1,i+6)];return Math.atan2(b.y-a.y,b.x-a.x)}
+function rodGeo(){
+  const t=E.tip,ta=seamAng();if(E.rodAng==null)E.rodAng=ta;let df=ta-E.rodAng;df=Math.atan2(Math.sin(df),Math.cos(df));E.rodAng+=df*.12;
+  const d=E.rodAng,k=E.dipT>0?Math.sin(Math.min(1,E.dipT/.18)*Math.PI):0,reach=E.r0*(3.4-2.6*k);
+  const tx=t.x+Math.cos(d)*reach,ty=t.y+Math.sin(d)*reach,a=d+.62,L=Math.max(W,H);
+  return{tx,ty,ex:tx+Math.cos(a)*L,ey:ty+Math.sin(a)*L,k};
+}
+function drawTigRod(c,sc=1){
+  if(E.proc!=='tig'||!E.tip||E.tool!=='weld'||save.opts.tig===2)return;const g=rodGeo(),w=Math.max(2.2,E.r0*.34);
+  c.save();c.lineCap='round';
+  c.strokeStyle='rgba(0,0,0,.35)';c.lineWidth=w*1.4;c.beginPath();c.moveTo(g.tx+2,g.ty+3);c.lineTo(g.ex+2,g.ey+3);c.stroke();
+  c.strokeStyle='#cfd3da';c.lineWidth=w;c.beginPath();c.moveTo(g.tx,g.ty);c.lineTo(g.ex,g.ey);c.stroke();
+  c.strokeStyle='rgba(255,255,255,.6)';c.lineWidth=w*.35;c.beginPath();c.moveTo(g.tx,g.ty);c.lineTo(g.ex,g.ey);c.stroke();
+  const hot=E.arc?Math.max(.35,g.k):0;
+  if(hot){c.globalCompositeOperation='lighter';c.strokeStyle=`rgba(255,${150+90*g.k|0},60,${.9*hot})`;c.lineWidth=w*1.2;c.beginPath();c.moveTo(g.tx,g.ty);c.lineTo(g.tx+(g.ex-g.tx)*.012,g.ty+(g.ey-g.ty)*.012);c.stroke();
+    if(g.k>.3){c.fillStyle=`rgba(255,240,200,${g.k})`;c.beginPath();c.arc(g.tx,g.ty,w*1.1,0,7);c.fill()}c.globalCompositeOperation='source-over'}
+  c.restore();
+}
+function drawTigTorch(c){
+  if(!E.tip)return;const {x,y}=E.tip,s=Math.max(.8,E.r0/8);
+  c.save();c.translate(x,y);c.rotate(-.75);
+  c.fillStyle='rgba(0,0,0,.3)';c.fillRect(12*s,6*s,140*s,18*s);
+  c.strokeStyle='#c9ccd4';c.lineWidth=2*s;c.beginPath();c.moveTo(0,0);c.lineTo(10*s,0);c.stroke();
+  c.fillStyle='#e8a0a0';c.beginPath();c.moveTo(8*s,-5*s);c.lineTo(30*s,-9*s);c.lineTo(30*s,9*s);c.lineTo(8*s,5*s);c.closePath();c.fill();
+  c.fillStyle='rgba(255,255,255,.3)';c.fillRect(10*s,-4*s,18*s,3*s);
+  c.fillStyle='#2b2d33';c.fillRect(30*s,-8*s,40*s,16*s);c.fillStyle='#1c1d21';c.fillRect(70*s,-10*s,26*s,20*s);
+  c.fillStyle='#2b2d33';c.beginPath();c.moveTo(96*s,-7*s);c.lineTo(150*s,-9*s);c.lineTo(150*s,9*s);c.lineTo(96*s,7*s);c.closePath();c.fill();
+  const gc=E.glove||'#8a5a32';c.fillStyle=gc;c.beginPath();c.ellipse(112*s,0,20*s,16*s,0,0,7);c.fill();
+  c.restore();
+  
+}
+function drawStinger(c){
+  if(!E.tip)return;const {x,y}=E.tip,s=Math.max(.8,E.r0/8),L=(18+62*Math.max(0,E.rod))*s;
+  c.save();c.translate(x,y);c.rotate(-.9);
+  c.fillStyle='rgba(0,0,0,.3)';c.fillRect(4*s,5*s,L+110*s,14*s);
+  c.fillStyle='#5a5f68';c.fillRect(0,-1.6*s,4*s,3.2*s);
+  c.fillStyle='#b9a98a';c.fillRect(3*s,-2.8*s,L,5.6*s);c.fillStyle='rgba(255,255,255,.25)';c.fillRect(3*s,-2.4*s,L,1.6*s);
+  c.fillStyle='#1d1e22';c.beginPath();c.moveTo(L,-9*s);c.lineTo(L+28*s,-12*s);c.lineTo(L+28*s,12*s);c.lineTo(L,9*s);c.closePath();c.fill();
+  c.fillStyle='#c0392b';c.fillRect(L+28*s,-11*s,56*s,22*s);c.fillStyle='rgba(0,0,0,.25)';for(let i=0;i<5;i++)c.fillRect(L+34*s+i*9*s,-11*s,3*s,22*s);
+  const gc=E.glove||'#8a5a32';c.fillStyle=gc;c.beginPath();c.ellipse(L+62*s,0,24*s,20*s,0,0,7);c.fill();
+  c.restore();
+}
+
+function drawHammer(c){
+  if(E.tool!=='chip'||!E.tip||!E.chipping)return;const {x,y}=E.tip,s=Math.max(.8,E.r0/8),a=-.6+Math.sin(E.t*38)*.35;
+  c.save();c.translate(x,y);c.rotate(a);
+  c.fillStyle='#6b6f78';c.beginPath();c.moveTo(-14*s,-5*s);c.lineTo(10*s,-5*s);c.lineTo(16*s,0);c.lineTo(10*s,5*s);c.lineTo(-14*s,5*s);c.closePath();c.fill();
+  c.fillStyle='rgba(255,255,255,.25)';c.fillRect(-12*s,-4*s,20*s,2*s);
+  c.fillStyle='#9a5a2a';c.fillRect(-4*s,5*s,7*s,70*s);c.fillStyle='#1d1e22';c.fillRect(-5*s,48*s,9*s,28*s);
+  c.restore();
+}
+/* ---------- angle grinder ---------- */
+let grSnd=null;
+function grindStart(){if(!audio()||grSnd)return;try{ac.resume();const o=ac.createOscillator(),og=ac.createGain(),lp=ac.createBiquadFilter();o.type='sawtooth';o.frequency.value=205;lp.type='lowpass';lp.frequency.value=2600;og.gain.value=.05;o.connect(lp).connect(og).connect(ac.destination);
+  const n=ac.createBufferSource();n.buffer=noiseBuf;n.loop=true;const bp=ac.createBiquadFilter();bp.type='bandpass';bp.frequency.value=4800;bp.Q.value=.8;const ng=ac.createGain();ng.gain.value=0;n.connect(bp).connect(ng).connect(ac.destination);
+  o.start();n.start();grSnd={o,og,n,ng}}catch(e){}}
+function grindStop(){if(!grSnd)return;const g=grSnd;grSnd=null;try{const t=ac.currentTime;g.o.frequency.setTargetAtTime(90,t,.15);g.og.gain.setTargetAtTime(0,t,.12);g.ng.gain.setTargetAtTime(0,t,.04);g.o.stop(t+.5);g.n.stop(t+.5)}catch(e){}}
+function grindSnd(onMetal){if(!grSnd)return;const t=ac.currentTime;grSnd.ng.gain.setTargetAtTime(onMetal?.11+Math.random()*.05:.015,t,.03);grSnd.o.frequency.setTargetAtTime(onMetal?165:205,t,.08)}
+function gouge(x,y,s){E.gouges++;E.defects.push({t:'G',x,y,s});setTimeout(()=>{if(mode==='weld')pelle('grind')},100)}
+function grindStep(dt){
+  const p=E.tip,Rg=E.r0*1.8;if(!onPlate(p)){grindSnd(false);return}
+  E.grindT+=dt;E.repaired=true;grindSnd(true);
+  const c=wctx;c.globalAlpha=Math.min(1,dt*9);c.drawImage(GRIND,p.x-Rg,p.y-Rg,Rg*2,Rg*2);c.globalAlpha=1;
+  c.strokeStyle='rgba(235,240,248,.22)';c.lineWidth=.8;for(let i=0;i<2;i++){const r=Rg*rnd(.25,.95),a=Math.random()*7;c.beginPath();c.arc(p.x,p.y,r,a,a+rnd(.4,1.1));c.stroke()}
+  const nr=nearest(p);
+  if(nr.d<Rg){
+    const lo=Math.max(0,Math.floor((nr.s-Rg*.8)/E.binLen)),hi=Math.min(E.n-1,Math.floor((nr.s+Rg*.8)/E.binLen));
+    for(let i=lo;i<=hi;i++){
+      if(E.binR[i]>0)E.binR[i]=Math.max(0,E.binR[i]-E.r0*dt*1.25);
+      else{E.gougeB[i]+=dt;if(E.gougeB[i]>.55&&E.gougeB[i]<9){for(let k=Math.max(0,i-3);k<=Math.min(E.n-1,i+3);k++)E.gougeB[k]=9;const q=E.S.pts[Math.min(E.S.pts.length-1,Math.round(i*E.binLen/2))];gouge(q.x,q.y,i*E.binLen)}}
+    }
+    E.offGrind=Math.max(0,E.offGrind-dt);
+  }else{E.offGrind+=dt;if(E.offGrind>1){E.offGrind=0;gouge(p.x,p.y,nr.s)}}
+  if(E.proc==='mma'){sctx.save();sctx.globalCompositeOperation='destination-out';sctx.beginPath();sctx.arc(p.x,p.y,Rg,0,7);sctx.fill();sctx.restore();if(nr.d<Rg){const a0=Math.max(0,Math.floor((nr.s-Rg)/E.binLen)),a1=Math.min(E.n-1,Math.floor((nr.s+Rg)/E.binLen));for(let i=a0;i<=a1;i++)E.slag[i]=0}}
+  if(E.spats.length){const R2=Rg*Rg;E.spats=E.spats.filter(q=>(q.x-p.x)**2+(q.y-p.y)**2>R2)}
+  for(const d of E.defects){if(d.rm||!'PSKI'.includes(d.t))continue;if((d.x-p.x)**2+(d.y-p.y)**2<Rg*Rg){const b=Math.min(E.n-1,Math.max(0,Math.floor(d.s/E.binLen)));if(E.binR[b]<E.r0*.35)d.rm=true}}
+  const ang=2.35;for(let i=0;i<9;i++){if(E.gsp.length>260)break;const a=ang+rnd(-.35,.35),sp=rnd(320,760),ox=p.x+Math.cos(ang)*Rg*.9,oy=p.y+Math.sin(ang)*Rg*.9;E.gsp.push({x:ox,y:oy,px:ox,py:oy,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,t:0,life:rnd(.18,.45)})}
+  if(Math.random()<dt*8&&E.smoke.length<40)E.smoke.push({x:p.x,y:p.y,r:rnd(5,9),t:0,life:rnd(.8,1.4),vx:rnd(-20,-5),vy:rnd(5,25)});
+}
+function drawGrinder(c){
+  if(E.tool!=='grind'||!E.tip||!E.grinding)return;
+  const {x,y}=E.tip,Rg=E.r0*2.4,s=Math.max(.8,E.r0/8);
+  c.save();c.translate(x,y);
+  c.fillStyle='rgba(0,0,0,.35)';c.beginPath();c.arc(4,6,Rg*1.2,0,7);c.fill();
+  c.fillStyle='#5b5e66';c.beginPath();c.arc(0,0,Rg*1.15,0,7);c.fill();
+  c.fillStyle='#3a3c42';c.beginPath();c.arc(0,0,Rg*.95,0,7);c.fill();
+  c.rotate(E.t*55);c.strokeStyle='rgba(255,255,255,.18)';c.lineWidth=1.2;for(let i=0;i<6;i++){c.beginPath();c.arc(0,0,Rg*(.35+i*.1),i,i+1.3);c.stroke()}
+  c.rotate(-E.t*55);c.fillStyle='#9aa0a8';c.beginPath();c.arc(0,0,Rg*.28,0,7);c.fill();c.fillStyle='#2a2b30';c.beginPath();c.arc(0,0,Rg*.14,0,7);c.fill();
+  c.strokeStyle='#26272c';c.lineWidth=Rg*.28;c.beginPath();c.arc(0,0,Rg*1.28,-.9,1.9);c.stroke();
+  c.rotate(.55);c.fillStyle='#2b2d33';c.fillRect(Rg*.6,-16*s,120*s,32*s);c.fillStyle='#ff7a1a';c.fillRect(Rg*.6+30*s,-16*s,40*s,32*s);
+  c.fillStyle='rgba(0,0,0,.35)';for(let i=0;i<5;i++)c.fillRect(Rg*.6+78*s+i*7*s,-12*s,3*s,24*s);
+  c.fillStyle='#1c1d21';c.fillRect(Rg*.2,-44*s,14*s,40*s);
+  c.restore();
+}
+function drawGSparks(c){
+  const g=E.gsp;if(!g.length)return;c.globalCompositeOperation='lighter';c.lineCap='round';
+  c.strokeStyle='rgba(255,220,140,.95)';c.lineWidth=1.6;c.beginPath();for(const s of g)if(s.t/s.life<.4){c.moveTo(s.px,s.py);c.lineTo(s.x,s.y)}c.stroke();
+  c.strokeStyle='rgba(255,130,40,.8)';c.lineWidth=1.2;c.beginPath();for(const s of g)if(s.t/s.life>=.4){c.moveTo(s.px,s.py);c.lineTo(s.x,s.y)}c.stroke();
+  c.globalCompositeOperation='source-over';
+}
+function update(dt){
+  if(!E)return;E.t+=dt;
+  if(E.demo){
+    if(!E.done){E.ds+=E.target*dt*(1+.12*Math.sin(E.t*3));
+      if(E.ds>=E.S.L){E.done=true;E.arc=false;E.doneT=0}
+      else{let i=E.demoI||0;while(i<E.S.cum.length-1&&E.S.cum[i]<E.ds)i++;E.demoI=i;const p=E.S.pts[i];E.tip={x:p.x+Math.sin(E.t*9)*1.2,y:p.y+Math.cos(E.t*7)*1.2};E.arc=true}}
+    else{E.doneT+=dt;if(E.doneT>1.6)initDemo()}
+  }
+  if(E.arc&&E.tip){
+    if(E.last){const dx=E.tip.x-E.last.x,dy=E.tip.y-E.last.y,d=Math.hypot(dx,dy);E.frameMove=d;
+      const v=d/Math.max(dt,1e-3);E.sp+=(v-E.sp)*Math.min(1,dt*5);
+      if(d>.3)E.dir=Math.atan2(dy,dx);
+      if(E.sp<E.target*.18)E.still+=dt;else E.still=Math.max(0,E.still-dt*3);
+      if(onPlate(E.tip)&&d>0){
+        const r=E.r0*Math.max(.5,Math.min(1.7,Math.pow(E.target/Math.max(E.sp,4),E.rExp)));
+        const step=Math.max(1.4,r*.34);let pos=0,guard=0;
+        while(E.acc+(d-pos)>=step&&guard++<60){pos+=step-E.acc;E.acc=0;const k=pos/d;deposit({x:E.last.x+dx*k,y:E.last.y+dy*k})}
+        E.acc+=d-pos;if(E.acc>step)E.acc=step;
+      }
+    }
+    if(onPlate(E.tip)){
+      if(E.still>.12){E.stillDep=(E.stillDep||0)+dt;if(E.stillDep>.09){E.stillDep=0;deposit(E.tip)}}
+      heatUp(E.tip,dt);
+      E.arcT+=dt;E.dist+=E.last?Math.hypot(E.tip.x-E.last.x,E.tip.y-E.last.y):0;
+      {const q=E.sp/E.target,ok=q>E.band[0]&&q<E.band[1]&&E.still<.2;if(ok){E.goodT+=dt;E.flow+=dt;if(E.flow>E.bestFlow)E.bestFlow=E.flow}else E.flow=0}
+      E.gheat=Math.min(.35,E.gheat+dt*.05*(1+E.vF*.4));
+      E.endHold=E.frameMove<.6?E.endHold+dt:0;
+      const ns=Math.floor((rnd(2,5)+E.bad*5)*E.P0.sparks);for(let i=0;i<ns;i++)spark(E.tip.x,E.tip.y,1+E.bad*.4);
+      if(Math.random()<dt*E.P0.smoke&&E.smoke.length<50)E.smoke.push({x:E.tip.x+rnd(-4,4),y:E.tip.y,r:rnd(6,12),t:0,life:rnd(1.4,2.4),vx:rnd(-12,12),vy:rnd(-40,-18)});
+      crackle(E.bad+Math.max(0,E.sp/E.target-1.7)*.4,dt);
+    }
+    E.last={x:E.tip.x,y:E.tip.y};
+  }else{E.last=null;E.sp*=.9}
+  if(!E.arc)E.gheat=Math.max(0,E.gheat-dt*.03);
+  const dec=Math.exp(-dt*.6);for(let i=0;i<E.n;i++)E.heat[i]*=dec;
+  if(E.arc&&E.tip&&!E.demo&&E.ghost!=null){const ps=E.S.cum[E.idx];E.ghost=Math.max(ps-E.r0*4,Math.min(ps+E.r0*7,E.ghost+E.target*dt));}
+  if(E.grinding&&E.tip){grindStep(dt);dirty=true}
+  if(E.chipping&&E.tip&&onPlate(E.tip)){chipAt(E.tip,dt);dirty=true}
+  if(E.proc==='tig'&&save.opts.tig===2){E.fill=1}
+  else if(E.proc==='tig'){E.sinceDip=(E.sinceDip||0)+dt;
+    if(save.opts.tig===1&&E.arc&&!E.demo){const I=1/(2.2*Math.max(.35,Math.min(1.6,E.sp/E.target||1)));if(E.sinceDip>=I)dip(true)}
+    E.rate*=Math.exp(-dt/.9);const want=2.2*Math.max(.35,Math.min(1.6,E.sp/E.target));E.fill=E.rate/want;if(E.dipT>0){E.dipT-=dt;dirty=true}}
+  if(E.proc==='mma'&&E.arc&&E.tip&&onPlate(E.tip)&&!E.demo){E.rod-=dt/(8.5*(E.st.eDia/3.2));if(E.rod<=0){E.rod=0;E.rodOut=true;E.arc=false;arcStop();crater();$('rodBtn').classList.add('warn');toast('Elektroden är slut. Tryck BYT ELEKTROD');buzz([20,30,20])}}
+  if(E.flakes&&E.flakes.length){const f=E.flakes;let q=0;for(let i=0;i<f.length;i++){const k=f[i];k.t+=dt;if(k.t>=k.life)continue;k.vy+=500*dt;k.x+=k.vx*dt;k.y+=k.vy*dt;f[q++]=k}f.length=q;dirty=true}
+  {const g=E.gsp;let q=0;for(let i=0;i<g.length;i++){const s=g[i];s.t+=dt;if(s.t>=s.life)continue;s.px=s.x-s.vx*dt*1.8;s.py=s.y-s.vy*dt*1.8;s.vy+=300*dt;s.x+=s.vx*dt;s.y+=s.vy*dt;g[q++]=s}g.length=q;if(q)dirty=true}
+  const sp=E.sparks;let j=0;for(let i=0;i<sp.length;i++){const s=sp[i];s.t+=dt;if(s.t>=s.life||s.y>H+20)continue;s.px=s.x;s.py=s.y;s.vy+=700*dt;s.vx*=.99;s.x+=s.vx*dt;s.y+=s.vy*dt;sp[j++]=s}sp.length=j;
+  const sm=E.smoke;j=0;for(let i=0;i<sm.length;i++){const s=sm[i];s.t+=dt;if(s.t>=s.life)continue;s.x+=s.vx*dt;s.y+=s.vy*dt;s.r+=dt*22;sm[j++]=s}sm.length=j;
+  const rc=E.recent;j=0;for(let i=0;i<rc.length;i++){const g=rc[i];g.t+=dt;if(g.t<g.life)rc[j++]=g}rc.length=j;if(rc.length>90)rc.splice(0,rc.length-90);
+  const want=E.arc&&helmet&&!E.demo?1:0;lens+=(want-lens)*Math.min(1,dt*(want?40:6));
+  if(E.arc||sp.length||sm.length||rc.length||lens>.01)dirty=true;
+}
+function drawGlow(c,boost){
+  c.globalCompositeOperation='lighter';
+  for(const g of E.recent){const a=g.t/g.life,k=a<.08?0:a<.25?1:a<.5?2:a<.8?3:4;const al=[1,.95,.85,.6,.35*(1-(a-.8)/.2)][k]*boost;if(al<=.01)continue;const R=g.r*(1.15+a*.2);c.globalAlpha=al;c.drawImage(HEAT[k],g.x-R,g.y-R,R*2,R*2)}
+  c.globalAlpha=1;c.globalCompositeOperation='source-over';
+}
+function drawSparks(c,k){
+  const sp=E.sparks;if(!sp.length)return;
+  c.globalCompositeOperation='lighter';c.lineCap='round';
+  const buckets=[[],[],[]];for(const s of sp){const a=s.t/s.life;buckets[a<.3?0:a<.7?1:2].push(s)}
+  let pal=E.pal||[[255,250,210],[255,190,80],[255,110,30]];
+  if(E.rainbow){const h=E.t*140;pal=[0,120,240].map(o=>hsl((h+o)%360))}
+  const cols=[`rgba(${pal[0]},${k})`,`rgba(${pal[1]},${k*.9})`,`rgba(${pal[2]},${k*.5})`],lw=[1.8,1.3,1.1];
+  for(let b=0;b<3;b++){if(!buckets[b].length)continue;c.strokeStyle=cols[b];c.lineWidth=lw[b];c.beginPath();for(const s of buckets[b]){c.moveTo(s.px,s.py);c.lineTo(s.x,s.y)}c.stroke()}
+  c.globalCompositeOperation='source-over';
+}
+function hsl(h){const f=n=>{const k=(n+h/30)%12,a=.9*Math.min(.6,1-.6);return Math.round(255*(.6-a*Math.max(-1,Math.min(k-3,9-k,1))))};return[f(0),f(8),f(4)]}
+function drawPool(c){
+  if(!E.arc||!E.tip||!onPlate(E.tip))return;
+  const {x,y}=E.tip,f=.85+Math.random()*.3,r=E.r0;
+  c.globalCompositeOperation='lighter';
+  let R=r*14*f;c.drawImage(BLOOM,x-R,y-R,R*2,R*2);
+  R=r*3*f;c.drawImage(CORE,x-R,y-R,R*2,R*2);
+  c.globalCompositeOperation='source-over';
+  c.fillStyle='#fff';c.beginPath();c.arc(x,y,r*.7,0,7);c.fill();
+}
+function drawTorch(c){
+  if(!E.tip)return;const {x,y}=E.tip,s=Math.max(.8,E.r0/8);
+  c.save();c.translate(x,y);c.rotate(-.75);
+  c.fillStyle='rgba(0,0,0,.35)';c.fillRect(10*s,5*s,150*s,22*s);
+  c.fillStyle='#b07040';c.fillRect(3*s,-2.5*s,8*s,5*s);
+  c.fillStyle='#d69a64';c.beginPath();c.moveTo(10*s,-8*s);c.lineTo(44*s,-11*s);c.lineTo(44*s,11*s);c.lineTo(10*s,8*s);c.closePath();c.fill();
+  c.fillStyle='rgba(255,230,200,.35)';c.fillRect(12*s,-6*s,30*s,4*s);
+  c.fillStyle='#50545b';c.fillRect(44*s,-10*s,26*s,20*s);
+  c.fillStyle='#26272c';c.beginPath();c.moveTo(70*s,-12*s);c.lineTo(170*s,-15*s);c.lineTo(170*s,15*s);c.lineTo(70*s,12*s);c.closePath();c.fill();
+  c.fillStyle='rgba(255,255,255,.08)';c.fillRect(72*s,-10*s,96*s,5*s);
+  c.fillStyle='#ff7a1a';c.fillRect(96*s,10*s,24*s,4*s);
+  const gc=E.glove||'#8a5a32';
+  c.fillStyle=gc;c.beginPath();c.ellipse(132*s,0,26*s,21*s,0,0,7);c.fill();
+  c.fillStyle='rgba(0,0,0,.25)';for(let f=0;f<4;f++){c.beginPath();c.ellipse((116+f*10)*s,-15*s,5.5*s,8*s,0,0,7);c.fill()}
+  c.fillStyle=gc;for(let f=0;f<4;f++){c.beginPath();c.ellipse((116+f*10)*s,-14*s,5*s,7.5*s,0,0,7);c.fill()}
+  c.fillStyle='rgba(255,255,255,.14)';c.beginPath();c.ellipse(126*s,-6*s,16*s,6*s,-.2,0,7);c.fill();
+  c.fillStyle=gc;c.fillRect(154*s,-24*s,40*s,48*s);c.fillStyle='rgba(0,0,0,.3)';c.fillRect(154*s,-24*s,4*s,48*s);
+  c.restore();
+}
+function render(){
+  if(!E||!dirty)return;dirty=false;
+  ctx.drawImage(workC,0,0,W,H);if(E.proc==='mma')ctx.drawImage(slagC,0,0,W,H);
+  for(const s of E.smoke){const a=1-s.t/s.life;ctx.globalAlpha=.22*a;ctx.drawImage(SMOKE,s.x-s.r,s.y-s.r,s.r*2,s.r*2)}ctx.globalAlpha=1;
+  drawGlow(ctx,1);drawSparks(ctx,1);
+  if(E.arc&&E.tip&&onPlate(E.tip)&&!helmet&&!E.demo){ctx.globalCompositeOperation='lighter';ctx.fillStyle=`rgba(190,220,255,${.28+Math.random()*.2})`;ctx.fillRect(0,0,W,H);ctx.globalCompositeOperation='source-over'}
+  if(lens>.01){ctx.fillStyle=`rgba(6,22,12,${E.lensMax*lens})`;ctx.fillRect(0,0,W,H);
+    if(E.tip){const R=E.r0*10;ctx.save();ctx.beginPath();ctx.arc(E.tip.x,E.tip.y,R,0,7);ctx.clip();ctx.globalAlpha=.62*lens;ctx.drawImage(workC,0,0,W,H);if(E.proc==='mma')ctx.drawImage(slagC,0,0,W,H);ctx.globalAlpha=1;ctx.restore()}
+    if(E.seamVis){ctx.strokeStyle=`rgba(170,255,200,${E.seamVis*lens})`;ctx.lineWidth=1.5;ctx.stroke(E.seamPath)}
+    drawGlow(ctx,.9*lens);drawSparks(ctx,.5*lens)}
+  drawGSparks(ctx);
+  if(E.flakes&&E.flakes.length){ctx.fillStyle='#4a3e30';for(const k of E.flakes)ctx.fillRect(k.x,k.y,k.s,k.s*.7)}
+  drawPool(ctx);drawTigRod(ctx);if(E.tool==='weld'){if(E.proc==='tig')drawTigTorch(ctx);else if(E.proc==='mma')drawStinger(ctx);else drawTorch(ctx)}drawGrinder(ctx);drawHammer(ctx);
+  if(lens>.01){ctx.fillStyle=`rgba(40,120,60,${.08*lens})`;ctx.fillRect(0,0,W,H)}
+  drawGhost(ctx);
+  drawLoupe();
+}
+
+let loupeOn=true;
+function ghostPt(){const cum=E.S.cum,g=E.ghost;let lo=0,hi=cum.length-1;while(lo<hi){const m=(lo+hi)>>1;if(cum[m]<g)lo=m+1;else hi=m}const a=E.S.pts[Math.max(0,lo-2)],b=E.S.pts[Math.min(cum.length-1,lo+2)];return{p:E.S.pts[lo],ang:Math.atan2(b.y-a.y,b.x-a.x)}}
+function drawGhost(c){
+  if(!save.opts.pace||mode!=='weld'||!E.arc||E.ghost==null||E.tool!=='weld'||E.ghost>=E.S.L-1)return;
+  const {p,ang}=ghostPt(),r=E.r0*1.3,pulse=.75+.25*Math.sin(E.t*10);
+  c.save();c.translate(p.x,p.y);c.rotate(ang);c.globalAlpha=.9;
+  c.strokeStyle=`rgba(90,210,255,${pulse})`;c.lineWidth=2.5;c.beginPath();c.arc(0,0,r*1.2,0,7);c.stroke();
+  c.fillStyle='rgba(90,210,255,.95)';c.beginPath();c.moveTo(r*2.6,0);c.lineTo(r*1.6,-r*.8);c.lineTo(r*1.6,r*.8);c.closePath();c.fill();
+  c.restore();
+}
+function drawLoupe(){
+  if(!loupeOn||mode!=='weld'||!E.tip||!(E.arc||E.grinding||E.chipping))return;
+  const Z=2.4,P=E.P,above=P.y-hudTopH-12,below=(H-hudBotH)-(P.y+P.h)-12,band=Math.max(above,below);
+  let R=Math.min(80,W*.21),cx,cy;
+  const m=save.char.frameOn!=='off'&&helmet?34:14;if(band>=R*2){cx=W-R-m;cy=below>=above?P.y+P.h+6+below/2:hudTopH+6+above/2}
+  else{R=Math.min(R,Math.max(46,band/2));if(E.lSide==null)E.lSide=1;const lx=E.lSide>0?W-R-m:R+m;if(Math.abs(E.tip.x-lx)<R*1.5&&Math.abs(E.tip.y-(P.y+R+8))<R*2.2)E.lSide=-E.lSide;cx=E.lSide>0?W-R-m:R+m;cy=P.y+R+8}
+  if(!E.lz)E.lz={x:E.tip.x,y:E.tip.y};E.lz.x+=(E.tip.x-E.lz.x)*.35;E.lz.y+=(E.tip.y-E.lz.y)*.35;const t=E.lz;E.lc=[cx|0,cy|0];
+  ctx.save();ctx.beginPath();ctx.arc(cx,cy,R,0,7);ctx.fillStyle='#000';ctx.fill();ctx.clip();
+  ctx.translate(cx,cy);ctx.scale(Z,Z);ctx.translate(-t.x,-t.y);
+  ctx.drawImage(workC,0,0,W,H);if(E.proc==='mma')ctx.drawImage(slagC,0,0,W,H);
+  ctx.strokeStyle='rgba(255,210,90,.55)';ctx.lineWidth=1/Z*1.5;ctx.setLineDash([3/Z*2,3/Z*2]);ctx.stroke(E.seamPath);ctx.setLineDash([]);
+  drawGlow(ctx,.35);
+  if(E.arc){const r=E.r0*(.9+Math.random()*.15);ctx.globalCompositeOperation='lighter';ctx.drawImage(CORE,E.tip.x-r*1.6,E.tip.y-r*1.6,r*3.2,r*3.2);ctx.globalCompositeOperation='source-over'}
+  drawTigRod(ctx);
+  if(E.grinding){ctx.strokeStyle='rgba(255,255,255,.5)';ctx.lineWidth=1/Z*2;ctx.beginPath();ctx.arc(E.tip.x,E.tip.y,E.r0*1.8,0,7);ctx.stroke()}
+  if(save.opts.pace&&E.arc&&E.ghost!=null&&E.tool==='weld'){const {p}=ghostPt();ctx.strokeStyle='rgba(90,210,255,.9)';ctx.lineWidth=2/Z;ctx.beginPath();ctx.arc(p.x,p.y,E.r0*1.3,0,7);ctx.stroke()}
+  ctx.restore();
+  ctx.lineWidth=5;ctx.strokeStyle='#0b0b0d';ctx.beginPath();ctx.arc(cx,cy,R+2,0,7);ctx.stroke();
+  let rc='rgba(255,255,255,.85)';if(E.arc&&E.tool==='weld'){const q=E.sp/E.target;rc=q>E.band[0]&&q<E.band[1]?'#5fd47a':(q>E.band[0]*.7&&q<E.band[1]*1.3)?'#ffc21a':'#ff5046'}
+  ctx.lineWidth=4;ctx.strokeStyle=rc;ctx.beginPath();ctx.arc(cx,cy,R,0,7);ctx.stroke();
+  if(E.arc&&hv>.05){ctx.lineWidth=5;ctx.strokeStyle=hv>.82?'#ff5046':hv>.6?'#ff8a3d':'#ffc21a';ctx.beginPath();ctx.arc(cx,cy,R+7,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.min(1,hv));ctx.stroke()}
+  ctx.strokeStyle='rgba(255,255,255,.35)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(cx-10,cy);ctx.lineTo(cx-4,cy);ctx.moveTo(cx+4,cy);ctx.lineTo(cx+10,cy);ctx.moveTo(cx,cy-10);ctx.lineTo(cx,cy-4);ctx.moveTo(cx,cy+4);ctx.lineTo(cx,cy+10);ctx.stroke();
+  ctx.fillStyle='rgba(0,0,0,.7)';ctx.fillRect(cx-20,cy+R-20,40,15);ctx.fillStyle='#fff';ctx.font='700 10px "JetBrains Mono",monospace';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('2,4×',cx,cy+R-12.5);
+}
+function setTool(t){if(!E)return;E.tool=t;E.chipping=false;$('tWeld').classList.toggle('on',t==='weld');$('tGrind').classList.toggle('on',t==='grind');$('tChip').classList.toggle('on',t==='chip');if(E.arc){E.arc=false;arcStop()}if(E.grinding){E.grinding=false;grindStop()}dirty=true}
+$('tWeld').onclick=()=>setTool('weld');$('tGrind').onclick=()=>setTool('grind');$('tChip').onclick=()=>setTool('chip');
+$('dipBtn').addEventListener('pointerdown',e=>{e.preventDefault();if(!save.opts.tig)dip()});
+function tigModeUI(){const m=save.opts.tig;document.querySelectorAll('#tigMode button').forEach(b=>b.classList.toggle('on',+b.dataset.t===m));$('dipBtn').disabled=m!==0;$('dipLbl').textContent=m===1?'AUTO':m===2?'AV':'DOPPA';$('poolV').hidden=m===2;$('beatArc').style.opacity=m===2?0:1;dirty=true}
+$('tigMode').onclick=e=>{const b=e.target.closest('button');if(!b)return;save.opts.tig=+b.dataset.t;persist();tigModeUI();if(E)E.fill=1};
+$('rodBtn').onclick=newRod;
+$('tLoupe').onclick=()=>{loupeOn=!loupeOn;save.opts.loupe=loupeOn?1:0;persist();$('tLoupe').classList.toggle('on',loupeOn)};
+
+/* ---------- Pelle ---------- */
+const PELLE={
+  burn:['Gå och svetsa cykelställ på fritids istället! Där märks det inte!','Det där ser ut som när en kråka har skitit på plåten!','VAD FAN GÖR DU?! Du har bränt HÅL i plåten! <i>*hick*</i>','Hål! HÅL! Det där är ingen svets, det är en schweizerost!','Fyrtio år har jag svetsat... <i>*hick*</i> ...och aldrig sett nåt så jävla dåligt!','Nu får du betala plåten själv, begriper du det?!'],
+  slow:['Min farsa svetsade fortare, och han hade EN arm!','Du rör dig som en snigel på valium! <i>*hick*</i>','Rör på dig för helvete! Plåten smälter ju!','Står du och sover eller?! <i>*hick*</i>','Snabbare! Du grillar ju plåten som korv!','Ska du stå där hela dan? Jag vill hem och dricka öl!'],
+  fast:['Är du sen till bussen eller?! Ta det lugnt!','Du svetsar som du kör moped. Utan hjärna!','Lugna ner dig! Det är ingen rallytävling! <i>*hick*</i>','Så där håller det ju inte! Det är ju bara lite skit på ytan!','Sakta! Svetsen hinner ju inte smälta in, din fjant!'],
+  off:['Fogen! FOGEN! Inte hela jävla plåten!','Har du lånat mina glasögon eller?! <i>*hick*</i>','Fogen är DÄR! Jag ser dubbelt och ser den ändå! <i>*hick*</i>','Du svetsar ju bredvid! Är du full eller?! ...Det är ju jag som är full.','Följ fogen för fan! Det är inte målarkurs!'],
+  helmet:['TA PÅ HJÄLMEN! Vill du bli blind som min svåger Bosse?!','Utan hjälm?! Är du dum i huvet?! <i>*hick*</i>','Hjälmen PÅ! Jag har inte råd med nya ögon åt dig!'],
+  settings:['Du har ställt in den som en brödrost!','Jobba på IKEA istället. Där får du en bruksanvisning!','Vem fan har ställt in maskinen?! Kolla tabellen! <i>*hick*</i>','Fel spänning! Det sprutar ju över hela verkstan!','Har du ens tittat på tabellen?! Den sitter ju på maskinen!'],
+  fail:['Gå och svetsa cykelställ istället! Kanske klarar du det. KANSKE.','Du borde skruva ihop IKEA-hyllor. Med insexnyckeln de skickar med.','Ta ledigt resten av året, grabben. Gärna resten av livet. <i>*hick*</i>','Jag har sett snyggare svetsar på en loppisgrill!','Det där är inte en svets. Det är en brottsplats!','UNDERKÄNT! Gör om, gör rätt! <i>*hick*</i>','Det där tar inte ens skrothandlarn emot!','Min mormor svetsar bättre, och hon är död sen -94!'],
+  good:['Hmpf... inte illa. Nu tar jag en till. <i>*hick*</i>','...Okej, det där var faktiskt snyggt. Säg inget till nån.','Bra jobbat grabben! Skål! <i>*hick*</i>'],
+  crater:['Krater i slutet! Stanna upp innan du släpper, för i helvete!','Vad är det där för grop?! Fyll kratern! <i>*hick*</i>','Man släpper inte bara sådär! Håll kvar en halv sekund!'],
+  start:['Du startade inte på förra svetsen! Nu blir det bindfel!','Börja där du slutade! Inte en bit bort! <i>*hick*</i>','Kallstart mitt i fogen?! Det spricker ju direkt!'],
+  tig:['Du doppar ju som en kratta! Jämn takt, för fan!','Det är ingen soppa du kokar! Mindre tråd! <i>*hick*</i>','Kallflyt! Tråden smälter ju inte in!'],
+  slag:['Du svetsar ju rakt på slaggen! Knacka bort den först!','Slagginneslutning! Hammaren ligger där, använd den! <i>*hick*</i>'],
+  grind:['Du slipar ju sönder hela plåten! Vad håller du på med?!','Slipa FOGEN, inte hela jävla bordet! <i>*hick*</i>','För djupt! Nu är ju godset borta, din klåpare!'],
+  gas:['Porer överallt! Det ser ut som en tvättsvamp! <i>*hick*</i>','Har du glömt skruva upp gasen?! Det är ju bara hål!','Det där är inte en svets, det är en schweizerost med rost!']
+};
+let pelleCd=0,pelleHideT=0,pelleLast={};
+function grumble(){if(!audio())return;try{const t=ac.currentTime,o=ac.createOscillator(),o2=ac.createOscillator(),f=ac.createBiquadFilter(),g=ac.createGain();o.type='sawtooth';o2.type='square';o.frequency.setValueAtTime(95,t);o.frequency.linearRampToValueAtTime(140,t+.15);o.frequency.linearRampToValueAtTime(80,t+.5);o2.frequency.setValueAtTime(48,t);f.type='lowpass';f.frequency.value=700;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.22,t+.04);g.gain.exponentialRampToValueAtTime(.0001,t+.6);o.connect(f);o2.connect(f);f.connect(g).connect(ac.destination);o.start(t);o2.start(t);o.stop(t+.62);o2.stop(t+.62)}catch(e){}}
+function pelle(kind,force,text){
+  const now=performance.now();if(!force&&now<pelleCd)return;pelleCd=now+5000;
+  let line=text;if(!line){const list=PELLE[kind];let i;do{i=Math.floor(Math.random()*list.length)}while(list.length>1&&i===pelleLast[kind]);pelleLast[kind]=i;line=list[i]}
+  if(mode==='weld'){const pm=$('pmini');if(!$('pface').firstChild){const sv=$('pelle').querySelector('svg').cloneNode(true);sv.setAttribute('viewBox','56 26 88 100');$('pface').appendChild(sv)}
+    $('pminiTxt').innerHTML=line;pm.hidden=false;pm.style.animation='none';void pm.offsetWidth;pm.style.animation='';
+    if(kind!=='good'){grumble();buzz([30,40,30])}clearTimeout(pelleHideT);pelleHideT=setTimeout(()=>{pm.hidden=true},2800);return}
+  $('pmini').hidden=true;
+  const el=$('pelle');el.classList.remove('bot');$('pelleTxt').innerHTML=line;el.hidden=false;el.classList.remove('in');void el.offsetWidth;el.classList.add('in');
+  if(kind!=='good'){grumble();buzz([30,40,30])}
+  clearTimeout(pelleHideT);pelleHideT=setTimeout(()=>{el.hidden=true},kind==='fail'||kind==='good'?4200:3200);
+}
+function pelleWatch(dt){
+  if(!E||!E.arc||!E.tip||!onPlate(E.tip))return;
+  const q=E.sp/E.target,nr=nearest(E.tip);
+  E.pSlow=(E.still>.4||q<.45)?(E.pSlow||0)+dt:0;
+  E.pFast=q>2?(E.pFast||0)+dt:0;
+  E.pOff=nr.d>E.r0*1.8?(E.pOff||0)+dt:0;
+  if(E.pSlow>.9){E.pSlow=0;pelle('slow')}
+  else if(E.pFast>1.2){E.pFast=0;pelle('fast')}
+  else if(E.pOff>.9){E.pOff=0;pelle('off')}
+  else if(E.pores>12&&!E.poreWarned){E.poreWarned=1;pelle('gas')}
+}
+function settingsRant(){
+  const j=JOBS[cur],st=E.st,I=ideal(j);
+  if(E.proc==='tig'){
+    if(st.tGas!=='I1')return'TIG med '+st.tGas+'?! Volframen brinner ju upp! Ren argon, för fan!';
+    if(j.mat==='alu'&&st.tAC!=='AC')return'Aluminium på DC?! Oxidhinnan smälter ju aldrig! Slå om till AC!';
+    if(j.mat!=='alu'&&st.tAC==='AC')return'AC på '+(j.mat==='inox'?'rostfritt':'stål')+'?! Kör DC minus! <i>*hick*</i>';
+    if(+st.tFlow<I.tFlow[0]-2)return'Mer gas! Det blir ju porer och svart volfram!';
+    if(E.sqVW<.75)return(st.tA<I.tigA?'För lite ström! Det smälter ju inte ens!':'Vad är det för ström?! Du bränner ju sönder plåten!');
+    return null;}
+  if(E.proc==='mma'){
+    if(E.typeQ<1&&I.eType==='E7018')return'Rutilelektrod på en bärande konstruktion?! Det ska vara basisk E7018!';
+    if(E.diaQ<1)return'Fel elektrod! Ø '+fmt(st.eDia)+' på '+j.mm+' mm plåt?! Ta Ø '+fmt(I.eDia)+'!';
+    if(E.sqVW<.75)return(st.eA<I.eA?'För lite ström! Elektroden fastnar ju hela tiden!':'Du kör ju på full pott! Sänk strömmen!');
+    return null;}
+  if(+st.flow<=0)return'GASEN ÄR JU AVSTÄNGD! Vad tror du skyddar svetsen, böner?! <i>*hick*</i>';
+  if(j.gas==='I1'&&st.gas!=='I1')return'Aluminium med blandgas?! Det blir ju svart som min lever!';
+  if(j.gas!=='I1'&&st.gas==='I1')return'Ren argon på '+(j.mat==='inox'?'rostfritt':'stål')+'?! Bågen fladdrar ju som en flagga!';
+  if(+st.flow<j.flow[0]-3)return'Skruva upp gasen för fan! Det blir ju porer överallt!';
+  if(+st.flow>j.flow[1]+6)return'Du blåser ju bort hela verkstan med den gasen! Sänk flödet!';
+  if(E.diaQ<1)return'Fel tråd i maskinen! Vem har stoppat i '+fmt(st.dia)+'-tråd?! <i>*hick*</i>';
+  if(E.stickQ<.8)return'Vad är det för utstick?! Håll pistolen 10–15 mm från plåten!';
+  return null;
+}
+
+/* ---------- input ---------- */
+let touchOff=0;
+function tipFrom(e){
+  const raw={x:e.clientX,y:e.clientY-touchOff},a=AIM[save.opts.aim]||0;
+  if(!a||!E||E.tool!=='weld')return raw;
+  const nr=nearest(raw);if(nr.d>E.r0*3.2)return raw;const q=E.S.pts[E.idx],k=a*(1-nr.d/(E.r0*3.2)*.4);
+  return{x:raw.x+(q.x-raw.x)*k,y:raw.y+(q.y-raw.y)*k};
+}
+cv.addEventListener('pointerdown',e=>{
+  if(mode!=='weld'||!E)return;e.preventDefault();
+  if(E.pid!=null&&e.pointerId!==E.pid&&(E.arc||E.grinding||E.chipping)){if(E.proc==='tig'&&E.arc&&!save.opts.tig)dip();return}
+  E.pid=e.pointerId;
+  touchOff=save.opts.above&&e.pointerType==='touch'?Math.max(56,E.r0*7):0;
+  try{cv.setPointerCapture(e.pointerId)}catch(_){}
+  E.tip=tipFrom(e);
+  if(E.tool==='chip'){E.chipping=true;E.last=null;$('hint').hidden=true;$('inspect').disabled=!E.started;dirty=true;return}
+  if(E.proc==='mma'&&E.rodOut){toast('Byt elektrod först');buzz(30);return}
+  if(E.tool==='grind'){E.grinding=true;E.last=null;$('hint').hidden=true;grindStart();buzz(10);$('inspect').disabled=!E.started;dirty=true;return}
+  if(!E.repaired&&E.lastDep&&E.dimes.length>6){const d=Math.hypot(E.tip.x-E.lastDep.x,E.tip.y-E.lastDep.y),nr=nearest(E.tip);
+    if(d>E.r0*1.3&&nr.d<E.r0*2.2&&coverage()<.985){E.starts++;E.defects.push({t:'S',x:E.tip.x,y:E.tip.y});setTimeout(()=>{if(mode==='weld')pelle('start')},150)}}
+  if(E.proc==='mma'&&E.dimes.length>6){const nr=nearest(E.tip),b=Math.min(E.n-1,Math.max(0,Math.floor(nr.s/E.binLen)));if(nr.d<E.r0*2&&E.slag[b]){E.defects.push({t:'I',x:E.tip.x,y:E.tip.y,s:nr.s});setTimeout(()=>{if(mode==='weld')pelle('slag')},200)}}
+  {const gs=nearest(E.tip).s;if(E.ghost==null||Math.abs(E.ghost-gs)>E.r0*4)E.ghost=gs}
+  E.arc=true;E.started=true;E.last=null;E.sp=E.target*.8;E.still=0;E.endHold=0;E.flow=0;$('hint').hidden=true;
+  arcStart();buzz(15);$('inspect').disabled=false;
+  if(!E.warnedSet&&E.setQ<.75){E.warnedSet=1;const t=settingsRant();setTimeout(()=>{if(mode==='weld')pelle('settings',true,t||undefined)},600)}
+});
+cv.addEventListener('pointermove',e=>{if(mode!=='weld'||!E||!(E.arc||E.grinding||E.chipping))return;if(E.pid!=null&&e.pointerId!==E.pid)return;const evs=e.getCoalescedEvents?e.getCoalescedEvents():null;const last=evs&&evs.length?evs[evs.length-1]:e;E.tip=tipFrom(last)});
+function crater(){
+  const L=E.lastDep;if(!L||L.d>E.r0*1.6)return;
+  if(E.endHold>=.22){wctx.fillStyle='rgba(255,255,255,.12)';wctx.beginPath();wctx.arc(L.x,L.y,L.r*.5,0,7);wctx.fill();return}
+  const c=wctx,r=L.r*.75;c.fillStyle='rgba(15,15,18,.7)';c.beginPath();c.arc(L.x,L.y,r,0,7);c.fill();
+  c.strokeStyle='rgba(255,255,255,.3)';c.lineWidth=1.2;c.beginPath();c.arc(L.x,L.y,r,Math.PI*.9,Math.PI*1.9);c.stroke();
+  c.fillStyle='rgba(0,0,0,.8)';c.beginPath();c.moveTo(L.x-r*.5,L.y);c.lineTo(L.x+r*.5,L.y+r*.15);c.lineTo(L.x-r*.2,L.y+r*.35);c.fill();
+  E.craters++;E.defects.push({t:'K',x:L.x,y:L.y,s:nearest(L).s});dirty=true;
+  if(coverage()<.985||E.craters===1)setTimeout(()=>{if(mode==='weld')pelle('crater')},200);
+}
+const up=(e)=>{if(e&&E&&E.pid!=null&&e.pointerId!==E.pid)return;if(E)E.pid=null;if(E&&E.chipping){E.chipping=false;dirty=true;return}
+  if(E&&E.grinding){E.grinding=false;grindStop();dirty=true;return}
+  if(!E||!E.arc||mode!=='weld')return;E.arc=false;arcStop();setFb('','');crater();
+  if(coverage()>=.985){if(E.proc==='mma'){if(!E.slagHint){E.slagHint=1;setTimeout(()=>{if(mode==='weld'){toast('Knacka bort slaggen med SLAGG, tryck sedan KLAR');setTool('chip')}},400)}}else setTimeout(()=>{if(mode==='weld'&&!E.arc)finish()},500)}};
+cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
+
+function coverage(){let c=0;const m=E.r0*.35;for(let i=0;i<E.n;i++)if(E.binR[i]>m)c++;return c/E.n}
+const live=t=>E.defects.filter(d=>d.t===t&&!d.rm).reduce((a,d)=>a+(d.n||1),0);
+let fbT=0,fbTxt='',lastProg=-1,lastNeedle=-1;
+function setFb(t,cls){if(t===fbTxt)return;fbTxt=t;const el=$('fb');el.textContent=t;el.className='fb '+cls;fbT=t?.9:0}
+let lastFs='',gaugeW=0,hv=0,lastHeat=-1,lastFlow=-1,lastA=-1,lastFill=-1,lastRod=-1;
+function hudTick(dt){
+  if(mode!=='weld'||!E)return;
+  const cov=Math.round(coverage()*200)/200;if(cov!==lastProg){lastProg=cov;$('hudProg').style.transform=`scaleX(${cov})`}
+  const ratio=E.sp/E.target,lr=Math.log(Math.max(.25,Math.min(4,ratio)))/Math.log(4);
+  if(!gaugeW)gaugeW=$('gauge').clientWidth;
+  const nx=Math.round((.5+lr*.5)*gaugeW);if(nx!==lastNeedle){lastNeedle=nx;$('needle').style.transform=`translateX(${nx-2}px)`}
+  if(E.tip&&E.arc){const nr=nearest(E.tip),b=Math.min(E.n-1,Math.floor(nr.s/E.binLen));hv=Math.min(1,(E.heat[b]+E.gheat)/E.thr)}else hv=Math.max(0,hv-dt*.6);
+  const hq=Math.round(hv*40)/40;if(hq!==lastHeat){lastHeat=hq;$('heatFill').style.transform=`scaleX(${hq})`}
+  const av=E.aLive?Math.round(E.aLive*10)/10:0;if(av!==lastA){lastA=av;const el=$('aV');el.textContent=av?`a ${fmt(av)} / a${E.aReq}`:`krav a${E.aReq}`;el.className='aread '+(!av?'':av<E.aReq-.3?'lo':av>E.aReq+1.2?'hi':'ok')}
+  if(E.proc==='tig'){const I=1/(2.2*Math.max(.35,Math.min(1.6,E.sp/E.target||1))),q=(E.sinceDip||0)/I,bv=Math.round(Math.min(1,q/1.35)*60)/60;
+    if(bv!==lastFill){lastFill=bv;const bar=$('beatArc');bar.style.strokeDasharray=`${(276.5*bv).toFixed(1)} 276.5`;bar.style.stroke=q<.72?'#7aa7e8':q<=1.35?'#5fd47a':'#ff5046'}
+    const fs=save.opts.tig===2?'ok':E.fill>1.3?'hi':E.fill<.7?'lo':'ok';if(fs!==lastFs){lastFs=fs;$('poolV').textContent=fs==='hi'?'Mycket tråd':fs==='lo'?'För lite tråd':'Bra mängd';$('poolV').className='pool '+fs}}
+  if(E.proc==='mma'){const rv=Math.round(E.rod*50)/50;if(rv!==lastRod){lastRod=rv;$('rodBar').style.transform=`scaleX(${rv})`}}
+  const fl=E.flow>=2?Math.floor(E.flow):0;if(fl!==lastFlow){lastFlow=fl;$('streakV').textContent=fl?`RYTM ${fl}s`:''}
+  if(E.arc&&hv>.82&&fbT<=0){setFb('Varmt! Kör fortare','bad')}
+  fbT-=dt;pelleWatch(dt);
+  if(E.arc&&fbT<=0){
+    const nr=E.tip?nearest(E.tip):{d:0};
+    if(E.still>.25)setFb('Rör på dig!','bad');
+    else if(nr.d>E.r0*1.6)setFb('Utanför fogen','warn');
+    else if(ratio<E.band[0])setFb('För långsamt','warn');
+    else if(ratio>E.band[1])setFb('För snabbt','warn');
+    else setFb('Snyggt!','good');
+  }
+}
+
+/* ---------- machine & WPS ---------- */
+function gasOptions(sel){sel.innerHTML=Object.entries(GASES).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}
+gasOptions($('gas'));gasOptions($('f_gas'));gasOptions($('tGas'));
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function machineToUI(){
+  $('volt').value=M.v;$('wire').value=M.w;$('gas').value=M.gas;$('dia').value=String(+M.dia);$('flow').value=M.flow;$('stick').value=M.stick;
+  $('tA').value=M.tA;$('tAC').value=M.tAC;$('tW').value=String(M.tW);$('tGas').value=M.tGas;$('tFlow').value=M.tFlow;$('eA').value=M.eA;$('eType').value=M.eType;$('eDia').value=String(+M.eDia);
+  setProc(M.proc||'mig',true);
+}
+function uiToMachine(){M.tA=+$('tA').value;M.tAC=$('tAC').value;M.tW=+$('tW').value;M.tGas=$('tGas').value;M.tFlow=+$('tFlow').value;M.eA=+$('eA').value;M.eType=$('eType').value;M.eDia=+$('eDia').value;M.v=+$('volt').value;M.w=+$('wire').value;M.gas=$('gas').value;M.dia=+$('dia').value;M.flow=+$('flow').value;M.stick=+$('stick').value;save.machine=M;persist()}
+function lcd(){
+  $('voltV').textContent=fmt($('volt').value)+' V';$('wireV').textContent=fmt($('wire').value)+' m/min';
+  $('flowV').textContent=$('flow').value+' l/min';$('stickV').textContent=$('stick').value+' mm';
+  $('tAV').textContent=$('tA').value+' A';$('tFlowV').textContent=$('tFlow').value+' l/min';$('eAV').textContent=$('eA').value+' A';
+  const p=M.proc||'mig';
+  $('ampV').textContent=(p==='tig'?$('tA').value:p==='mma'?$('eA').value:amps(+$('dia').value,+$('wire').value))+' A';
+  $('procV').textContent=p==='tig'?'141 TIG · '+$('tAC').value:p==='mma'?'111 MMA · '+$('eType').value:procOf($('gas').value);
+}
+function markManual(){if(M.wps){M.wps='';$('wpsPick').value=''}}
+['tA','tFlow','eA'].forEach(id=>$(id).addEventListener('input',()=>{uiToMachine();lcd()}));
+['tAC','tW','tGas','eType','eDia'].forEach(id=>$(id).addEventListener('change',()=>{uiToMachine();lcd()}));
+$('procSeg').onclick=e=>{const b=e.target.closest('button');if(b)setProc(b.dataset.p)};
+['volt','wire','flow','stick'].forEach(id=>$(id).addEventListener('input',()=>{lcd();uiToMachine();markManual()}));
+['gas','dia'].forEach(id=>$(id).addEventListener('change',()=>{lcd();uiToMachine();markManual()}));
+function fillWpsPick(){
+  $('wpsPick').innerHTML='<option value="">Manuell inställning</option>'+save.wps.map(w=>`<option value="${esc(w.id)}">${esc(w.name)} · ${MATS[w.mat].n} ${fmt(w.mm)} mm</option>`).join('');
+  $('wpsPick').value=save.wps.some(w=>w.id===M.wps)?M.wps:'';
+}
+$('wpsPick').addEventListener('change',e=>{const w=save.wps.find(x=>x.id===e.target.value);if(!w){M.wps='';save.machine=M;persist();return}
+  Object.assign(M,{v:w.v,w:w.w,gas:w.gas,dia:w.dia,flow:w.flow,stick:w.stick,wps:w.id,proc:'mig'});save.machine=M;persist();machineToUI();toast(`${w.name} laddad`);
+  const j=JOBS[cur];if(w.mat!==j.mat||Math.abs(w.mm-j.mm)>1)setTimeout(()=>pelle('settings',true,`${esc(w.name)} gäller ju ${MATS[w.mat].n.toLowerCase()} ${fmt(w.mm)} mm! Det här är ${MATS[j.mat].n.toLowerCase()} ${fmt(j.mm)} mm! Läs för fan!`),300)});
+
+function wpsCard(w){
+  const i=amps(w.dia,w.w),q=heatIn(w.v,i,w.ts);
+  return `<div class="wpsdoc" data-id="${esc(w.id)}">
+    <header><b>${esc(w.name)}${w.ex?'<span class="ex">EXEMPEL</span>':''}</b><span>${procOf(w.gas)} · ${w.joint} · ${w.pos}</span></header>
+    <div class="wtab">
+      <div><small>Material</small><b>${MATS[w.mat].n}</b></div><div><small>Godstjocklek</small><b>${fmt(w.mm)} mm</b></div><div><small>Gas</small><b>${w.gas}</b></div>
+      <div><small>Gasflöde</small><b>${w.flow} l/min</b></div><div><small>Tråd</small><b>Ø ${fmt(w.dia)}</b></div><div><small>Utstick</small><b>${w.stick} mm</b></div>
+      <div><small>Spänning</small><b>${fmt(w.v)} V</b></div><div><small>Trådmatn.</small><b>${fmt(w.w)} m/min</b></div><div><small>Ström</small><b>≈ ${i} A</b></div>
+      <div><small>Hastighet</small><b>${w.ts||'–'} mm/min</b></div><div><small>Polaritet</small><b>DC+</b></div><div><small>Sträckenergi</small><b>${q?fmt(q,2)+' kJ/mm':'–'}</b></div>
+    </div>
+    ${w.note?`<p class="note">${esc(w.note)}</p>`:''}
+    <div class="acts"><button data-act="edit">Redigera</button><button data-act="del" class="del">Ta bort</button></div>
+  </div>`;
+}
+function renderWps(){
+  $('wpsDocs').innerHTML=save.wps.length?save.wps.map(wpsCard).join(''):'<div class="empty">Pärmen är tom. Skapa ditt första WPS.</div>';
+  $('wpsCount').textContent=save.wps.length+(save.wps.length===1?' svetsdatablad':' svetsdatablad');
+}
+let wpsReturn='home';
+function openWpsList(from){wpsReturn=from||'home';mode='wps';show('wpsList');renderWps()}
+$('openWps').onclick=()=>openWpsList('home');
+$('wpsBack').onclick=()=>{if(wpsReturn==='setup')openSetup(cur);else goHome()};
+$('wpsDocs').onclick=e=>{const b=e.target.closest('button[data-act]');if(!b)return;const id=b.closest('.wpsdoc').dataset.id,w=save.wps.find(x=>x.id===id);if(!w)return;
+  if(b.dataset.act==='edit')openForm(w,'wps');
+  else if(b.dataset.sure){save.wps=save.wps.filter(x=>x.id!==id);if(id==='ex1')save.exRemoved=true;if(M.wps===id)M.wps='';persist();renderWps();toast('WPS borttaget')}
+  else{b.dataset.sure=1;b.textContent='Säker? Tryck igen'}};
+$('newWps').onclick=()=>openForm(null,'wps');
+let editId=null,formReturn='wps';
+function nextName(){let n=2;while(save.wps.some(w=>w.name==='WPS-'+String(n).padStart(3,'0')))n++;return'WPS-'+String(n).padStart(3,'0')}
+function openForm(w,ret,prefill){
+  formReturn=ret;editId=w?w.id:null;mode='wps';show('wpsForm');
+  $('wfTitle').textContent=w?'Redigera WPS':'Ny WPS';$('wfDel').hidden=!w;$('wfDel').textContent='Ta bort';delete $('wfDel').dataset.sure;
+  const d=w||Object.assign({name:nextName(),mat:'steel',mm:3,joint:'BW',pos:'PA',gas:'M21',flow:14,dia:.8,stick:12,v:18,w:5,ts:420,note:''},prefill||{});
+  $('f_name').value=d.name;$('f_mat').value=d.mat;$('f_mm').value=d.mm;$('f_joint').value=d.joint;$('f_pos').value=d.pos;$('f_gas').value=d.gas;$('f_flow').value=d.flow;$('f_dia').value=String(+d.dia);$('f_stick').value=d.stick;$('f_v').value=d.v;$('f_w').value=d.w;$('f_ts').value=d.ts||'';$('f_note').value=d.note||'';
+  calcForm();$('wpsForm').scrollTop=0;
+}
+function num(id,lo,hi,def){let v=parseFloat(String($(id).value).replace(',','.'));if(!isFinite(v))v=def;return Math.max(lo,Math.min(hi,v))}
+function calcForm(){const v=num('f_v',14,30,18),w=num('f_w',2,15,5),d=+$('f_dia').value,ts=num('f_ts',0,1200,0),i=amps(d,w),q=heatIn(v,i,ts);
+  $('wfCalc').innerHTML=`<span>${procOf($('f_gas').value)}</span><span>Ström ≈ ${i} A</span><span>Sträckenergi ${q?fmt(q,2)+' kJ/mm':'–'}</span><span>DC+</span>`}
+$('wf').addEventListener('input',calcForm);$('wf').addEventListener('change',calcForm);
+$('wfCancel').onclick=()=>formReturn==='setup'?openSetup(cur):openWpsList(wpsReturn);
+$('wfDel').onclick=e=>{const b=e.currentTarget;if(!b.dataset.sure){b.dataset.sure=1;b.textContent='Säker? Tryck igen';return}
+  save.wps=save.wps.filter(x=>x.id!==editId);if(editId==='ex1')save.exRemoved=true;persist();toast('WPS borttaget');openWpsList(wpsReturn)};
+$('wf').addEventListener('submit',e=>{e.preventDefault();
+  const w={id:editId||('w'+Date.now().toString(36)),name:($('f_name').value.trim()||nextName()).slice(0,24),mat:$('f_mat').value,mm:num('f_mm',1,20,3),joint:$('f_joint').value,pos:$('f_pos').value,gas:$('f_gas').value,flow:Math.round(num('f_flow',0,30,14)),dia:+$('f_dia').value,stick:Math.round(num('f_stick',5,25,12)),v:num('f_v',14,30,18),w:num('f_w',2,15,5),ts:Math.round(num('f_ts',0,1200,0)),note:$('f_note').value.trim().slice(0,200)};
+  const i=save.wps.findIndex(x=>x.id===w.id);if(i>=0)save.wps[i]=w;else save.wps.push(w);persist();toast(`${w.name} sparat`);
+  if(formReturn==='setup'){Object.assign(M,{v:w.v,w:w.w,gas:w.gas,dia:w.dia,flow:w.flow,stick:w.stick,wps:w.id});save.machine=M;persist();openSetup(cur)}else openWpsList(wpsReturn)});
+$('saveWps').onclick=()=>{uiToMachine();const j=JOBS[cur];openForm(null,'setup',{mat:j.mat,mm:j.mm,gas:M.gas,flow:M.flow,dia:M.dia,stick:M.stick,v:M.v,w:M.w})};
+
+/* ---------- welder character ---------- */
+const SKINS=['#f3d2bd','#e8b896','#c98e66','#a0673f','#6f4428','#4a2c1a'];
+const HAIRC=['#1d1512','#4a2e1c','#8a5a2b','#d6a85a','#ece0b8','#b8392a','#8f949b','#2b6fe0','#e0529c'];
+const JACKETS=[['#6b4a2e','Brunt läder'],['#2c2d31','Svart'],['#1f2a38','Marinblå'],['#7a1f1f','Röd'],['#2f5a33','Grön'],['#d9a21a','Varselgul']];
+const HAIRS=[['kort','Kort'],['rakad','Rakad'],['lugg','Lugg'],['lockigt','Lockigt'],['hast','Hästsvans'],['langt','Långt'],['knut','Knut'],['bob','Page'],['flata','Fläta']];
+const BEARDS=[['inget','Inget'],['stubb','Stubb'],['mustasch','Mustasch'],['helskagg','Helskägg']];
+const CHAR_DEF={name:'',g:'m',skin:1,hair:'kort',hairc:1,beard:'stubb',jacket:0,visor:'up',frameOn:'on'};
+save.char=Object.assign({},CHAR_DEF,save.char||{});
+let svgId=0;
+function helmetArt(id,u,noClip){
+  const clip=`clip-path="url(#${u}hc)"`;
+  const B=(c)=>`<rect x="40" y="8" width="120" height="80" fill="${c}"/>`;
+  let g='';
+  switch(id){
+    case 'f1':g=B('#ffc21a')+Array.from({length:9},(_,i)=>`<path d="M${30+i*16} 90L${58+i*16} 8L${66+i*16} 8L${38+i*16} 90Z" fill="#161616"/>`).join('');break;
+    case 'f2':g=B('#1d1e22')+Array.from({length:60},(_,i)=>{const x=40+(i%12)*10,y=8+Math.floor(i/12)*16;return`<rect x="${x+((Math.floor(i/12))%2)*5}" y="${y}" width="5" height="8" fill="#34363c"/>`}).join('');break;
+    case 'f3':g=B('#121212')+`<path d="M44 84C50 66 58 72 60 58C66 70 70 66 72 50C78 64 84 60 86 44C92 60 98 56 100 38C104 56 110 60 114 46C118 62 124 66 128 52C132 68 138 70 142 58C146 70 152 70 156 84Z" fill="#ff4d00"/><path d="M50 84C56 72 62 76 66 66C70 74 76 72 78 60C84 70 90 70 94 56C98 70 104 72 108 60C112 72 118 74 122 64C126 74 132 76 136 68C140 76 146 78 150 84Z" fill="#ffb300"/>`;break;
+    case 'f4':g=B('#4f5a36')+`<circle cx="62" cy="30" r="12" fill="#3d4a2a"/><circle cx="110" cy="52" r="15" fill="#6b6a3c"/><circle cx="140" cy="26" r="10" fill="#232a18"/><circle cx="84" cy="66" r="11" fill="#232a18"/><circle cx="130" cy="72" r="9" fill="#3d4a2a"/><circle cx="92" cy="24" r="8" fill="#6b6a3c"/>`;break;
+    case 'f5':g=B('#006aa7')+`<rect x="84" y="8" width="14" height="80" fill="#fecc02"/><rect x="40" y="40" width="120" height="12" fill="#fecc02"/>`;break;
+    case 'f6':g=B('#141414')+`<ellipse cx="100" cy="40" rx="17" ry="15" fill="#eeeae0"/><rect x="90" y="50" width="20" height="10" rx="2" fill="#eeeae0"/><circle cx="93" cy="40" r="4.5" fill="#141414"/><circle cx="107" cy="40" r="4.5" fill="#141414"/><path d="M100 45L97 50H103Z" fill="#141414"/><path d="M94 52V60M98 52V60M102 52V60M106 52V60" stroke="#141414" stroke-width="1.2"/><path d="M70 70L130 30M70 30L130 70" stroke="#eeeae0" stroke-width="4" stroke-linecap="round" opacity=".9"/>`;break;
+    case 'f7':g=`<defs><linearGradient id="${u}gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8a6a1a"/><stop offset=".3" stop-color="#f5d77a"/><stop offset=".5" stop-color="#b8902a"/><stop offset=".72" stop-color="#fff0b0"/><stop offset="1" stop-color="#7a5a12"/></linearGradient></defs><rect x="40" y="8" width="120" height="80" fill="url(#${u}gold)"/><path d="M60 20Q70 40 64 70" stroke="#fff" stroke-width="5" opacity=".5" fill="none"/>`;break;
+    case 'f8':g=B('#0b0c1a')+`<path d="M44 30H80V46H120V24H156M44 62H70V76H130V58H156M100 8V30" stroke="#18e0ff" stroke-width="2.4" fill="none"/><path d="M44 50H64V36M136 44V70H156" stroke="#ff3ecf" stroke-width="2.4" fill="none"/><circle cx="80" cy="46" r="3" fill="#18e0ff"/><circle cx="120" cy="24" r="3" fill="#18e0ff"/><circle cx="64" cy="36" r="3" fill="#ff3ecf"/>`;break;
+    case 'f9':g=B('#f08a1a')+Array.from({length:8},(_,i)=>`<path d="M${46+i*15} 8Q${40+i*15} 40 ${52+i*15} 88L${58+i*15} 88Q${50+i*15} 44 ${56+i*15} 8Z" fill="#141414"/>`).join('');break;
+    case 'f10':g=B('#e0529c')+Array.from({length:26},(_,i)=>`<circle cx="${44+(i*37)%112}" cy="${12+(i*23)%70}" r="${1+(i%3)*.7}" fill="#fff" opacity=".9"/>`).join('')+`<path d="M78 30l3 7 7 3-7 3-3 7-3-7-7-3 7-3z M126 54l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="#fff"/>`;break;
+    case 'f11':g=B('#1d3f8f')+`<path d="M112 8L82 50H100L86 88L130 38H108L122 8Z" fill="#ffd23a" stroke="#fff4a8" stroke-width="1.5"/>`;break;
+    default:g=B('#1b1c1f');
+  }
+  return noClip?g:`<g ${clip}>${g}</g>`;
+}
+function helmetShell(id,u){
+  return `<defs><clipPath id="${u}hc"><path d="M50 74C46 36 70 12 100 12C130 12 154 36 150 74C136 62 118 58 100 58C82 58 64 62 50 74Z"/></clipPath>
+  <linearGradient id="${u}sh" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".32"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".35"/></linearGradient></defs>
+  ${helmetArt(id,u)}
+  <path d="M50 74C46 36 70 12 100 12C130 12 154 36 150 74C136 62 118 58 100 58C82 58 64 62 50 74Z" fill="url(#${u}sh)" stroke="#0b0b0d" stroke-width="2.5"/>
+  <rect x="72" y="22" width="56" height="14" rx="4" fill="#0a1812" stroke="#0b0b0d" stroke-width="2"/><rect x="75" y="24" width="20" height="4" rx="2" fill="#5fd47a" opacity=".45"/>
+  <circle cx="51" cy="72" r="6" fill="#2a2b30" stroke="#0b0b0d" stroke-width="2"/><circle cx="149" cy="72" r="6" fill="#2a2b30" stroke="#0b0b0d" stroke-width="2"/>`;
+}
+function helmetDown(id,u){
+  const P='M56 110C52 62 72 36 100 36C128 36 148 62 144 110C144 142 126 166 100 168C74 166 56 142 56 110Z';
+  return `<defs><clipPath id="${u}dc"><path d="${P}"/></clipPath><linearGradient id="${u}s2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".3"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".4"/></linearGradient></defs>
+  <g clip-path="url(#${u}dc)"><g transform="translate(-20 26) scale(1.2 1.6)">${helmetArt(id,u,true)}</g></g>
+  <path d="${P}" fill="url(#${u}s2)" stroke="#0b0b0d" stroke-width="2.5"/>
+  <rect x="71" y="90" width="58" height="24" rx="5" fill="#0a1812" stroke="#0b0b0d" stroke-width="2.5"/><rect x="75" y="93" width="24" height="5" rx="2.5" fill="#5fd47a" opacity=".45"/>
+  <path d="M86 146H114M88 152H112" stroke="rgba(0,0,0,.4)" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="57" cy="106" r="6" fill="#2a2b30" stroke="#0b0b0d" stroke-width="2"/><circle cx="143" cy="106" r="6" fill="#2a2b30" stroke="#0b0b0d" stroke-width="2"/>`;
+}
+function welderSVG(c,helm,opt={}){
+  const u='w'+(svgId++),sk=SKINS[c.skin]||SKINS[1],sd=shadeHex(sk,-.18),hc=HAIRC[c.hairc]||HAIRC[1],hd=shadeHex(hc,-.3),jk=(JACKETS[c.jacket]||JACKETS[0])[0],jd=shadeHex(jk,-.3),f=c.g==='f';
+  let back='',front='',beard='';
+  switch(c.hair){
+    case 'langt':back=`<path d="M58 96C54 132 56 168 64 186L136 186C144 168 146 132 142 96Z" fill="${hd}"/>`;front=`<path d="M60 100C58 80 66 66 76 62L70 118Z" fill="${hc}"/><path d="M140 100C142 80 134 66 124 62L130 118Z" fill="${hc}"/>`;break;
+    case 'hast':back=`<path d="M136 86C160 96 162 140 150 170C146 150 142 120 132 104Z" fill="${hc}"/><circle cx="138" cy="88" r="6" fill="#d33"/>`;front=`<path d="M62 92C62 74 70 66 80 64L66 104Z" fill="${hc}"/>`;break;
+    case 'knut':back=`<circle cx="100" cy="46" r="14" fill="${hc}"/>`;front=`<path d="M62 94C62 74 70 66 80 64L66 104Z" fill="${hc}"/><path d="M138 94C138 74 130 66 120 64L134 104Z" fill="${hc}"/>`;break;
+    case 'bob':back=`<path d="M58 90C56 118 58 132 64 138L136 138C142 132 144 118 142 90Z" fill="${hd}"/>`;front=`<path d="M60 96C58 76 68 64 80 62L70 128Z" fill="${hc}"/><path d="M140 96C142 76 132 64 120 62L130 128Z" fill="${hc}"/>`;break;
+    case 'flata':back=`<path d="M134 96C146 120 146 150 140 176" stroke="${hc}" stroke-width="14" fill="none" stroke-linecap="round"/><path d="M130 110L146 116M132 126L148 130M132 142L146 146M132 158L144 162" stroke="${hd}" stroke-width="2.5"/>`;front=`<path d="M62 94C62 74 70 66 80 64L66 104Z" fill="${hc}"/>`;break;
+    case 'lockigt':front=[64,72,136,128].map((x,i)=>`<circle cx="${x}" cy="${86+(i%2)*8}" r="9" fill="${hc}"/>`).join('');break;
+    case 'lugg':front=`<path d="M64 88C66 72 80 64 100 64C120 64 134 72 136 88C124 80 110 78 96 84C84 80 72 82 64 88Z" fill="${hc}"/>`;break;
+    case 'rakad':front=`<path d="M64 84C66 72 80 66 100 66C120 66 134 72 136 84" stroke="${hc}" stroke-width="4" fill="none" opacity=".5"/>`;break;
+    default:front=`<path d="M62 92C62 74 72 66 82 64L66 102Z" fill="${hc}"/><path d="M138 92C138 74 128 66 118 64L134 102Z" fill="${hc}"/>`;
+  }
+  if(!f)switch(c.beard){
+    case 'stubb':beard=`<path d="M66 116C68 138 82 150 100 152C118 150 132 138 134 116C128 132 116 140 100 140C84 140 72 132 66 116Z" fill="${hc}" opacity=".35"/>`;break;
+    case 'mustasch':beard=`<path d="M86 127C92 122 98 124 100 126C102 124 108 122 114 127C110 130 104 129 100 128C96 129 90 130 86 127Z" fill="${hc}"/>`;break;
+    case 'helskagg':beard=`<path d="M64 110C64 140 80 160 100 160C120 160 136 140 136 110C132 124 124 132 114 128C108 124 92 124 86 128C76 132 68 124 64 110Z" fill="${hc}"/><path d="M90 136Q100 140 110 136" stroke="#6b2a2a" stroke-width="2.5" fill="none"/>`;break;
+  }
+  const eyes=f?`<path d="M80 101Q86 97 92 101M108 101Q114 97 120 101" stroke="#1a1410" stroke-width="2.2" fill="none"/><path d="M79 101L76 98M121 101L124 98" stroke="#1a1410" stroke-width="1.6"/>`:'';
+  const brows=f?`<path d="M78 92Q86 88 93 91M107 91Q114 88 122 92" stroke="${hd}" stroke-width="2.6" fill="none" stroke-linecap="round"/>`:`<path d="M76 92Q86 87 94 91M106 91Q114 87 124 92" stroke="${hd}" stroke-width="4" fill="none" stroke-linecap="round"/>`;
+  const mouth=f?`<path d="M90 130Q100 137 110 130Q100 133 90 130Z" fill="#b8505a"/><path d="M90 130Q100 127 110 130" stroke="#8a3a44" stroke-width="1.5" fill="none"/>`:`<path d="M89 130Q100 136 111 129" stroke="#5a2a24" stroke-width="2.6" fill="none" stroke-linecap="round"/>`;
+  return `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  ${back}
+  <path d="M22 200C24 168 50 150 78 146L122 146C150 150 176 168 178 200Z" fill="${jk}"/>
+  <path d="M22 200C24 168 50 150 78 146L100 172L122 146C150 150 176 168 178 200Z" fill="url(#${u}jg)"/>
+  <defs><linearGradient id="${u}jg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".12"/><stop offset="1" stop-color="#000" stop-opacity=".3"/></linearGradient><radialGradient id="${u}sk" cx="42%" cy="36%" r="70%"><stop offset="0" stop-color="${shadeHex(sk,.12)}"/><stop offset=".7" stop-color="${sk}"/><stop offset="1" stop-color="${sd}"/></radialGradient></defs>
+  <path d="M78 146L100 176L122 146L114 142L100 158L86 142Z" fill="${jd}"/>
+  <path d="M48 170Q60 164 70 168M152 170Q140 164 130 168" stroke="${jd}" stroke-width="2" fill="none"/>
+  <rect x="138" y="176" width="22" height="14" rx="2" fill="#ff7a1a"/><path d="M142 183H156" stroke="#1a0b00" stroke-width="2"/>
+  <path d="M88 132L88 150Q100 158 112 150L112 132Z" fill="${sd}"/>
+  <ellipse cx="62" cy="108" rx="6" ry="9" fill="${sd}"/><ellipse cx="138" cy="108" rx="6" ry="9" fill="${sd}"/>
+  <path d="M64 100C64 76 80 62 100 62C120 62 136 76 136 100C136 ${f?128:124} ${f?122:126} ${f?148:150} 100 ${f?150:152}C${f?78:74} ${f?148:150} 64 ${f?128:124} 64 100Z" fill="url(#${u}sk)"/>
+  ${beard}
+  ${brows}
+  <ellipse cx="86" cy="104" rx="5" ry="${f?4.4:4}" fill="#fff"/><ellipse cx="114" cy="104" rx="5" ry="${f?4.4:4}" fill="#fff"/>
+  <circle cx="86.5" cy="104.5" r="2.8" fill="#3a2a1c"/><circle cx="114.5" cy="104.5" r="2.8" fill="#3a2a1c"/><circle cx="87.5" cy="103.5" r=".9" fill="#fff"/><circle cx="115.5" cy="103.5" r=".9" fill="#fff"/>
+  ${eyes}
+  <path d="M100 106Q97 116 95 120Q100 123 105 120" stroke="${sd}" stroke-width="2" fill="none" stroke-linecap="round"/>
+  ${f?`<ellipse cx="78" cy="118" rx="7" ry="4" fill="#e87a7a" opacity=".25"/><ellipse cx="122" cy="118" rx="7" ry="4" fill="#e87a7a" opacity=".25"/>`:''}
+  ${mouth}
+  <path d="M63 98C60 74 78 58 100 58C122 58 140 74 137 98C131 84 118 76 100 76C82 76 69 84 63 98Z" fill="${hc}" opacity="${c.hair==='rakad'?.4:1}"/>
+  ${front}
+  <path d="M62 80Q100 68 138 80L138 86Q100 74 62 86Z" fill="#2a2b30"/>
+  ${c.visor==='down'?helmetDown(helm,u):helmetShell(helm,u)}
+  </svg>`;
+}
+function helmetOnlySVG(id){const u='h'+(svgId++);return`<svg viewBox="40 6 120 76" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${helmetShell(id,u)}</svg>`}
+function shadeHex(hex,a){const c=hex.replace('#','');let r=parseInt(c.slice(0,2),16),g=parseInt(c.slice(2,4),16),b=parseInt(c.slice(4,6),16);const t=a<0?0:255,p=Math.abs(a);r=Math.round(r+(t-r)*p);g=Math.round(g+(t-g)*p);b=Math.round(b+(t-b)*p);return'#'+[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('')}
+
+function renderMe(){const el=$('meAv');if(el)el.innerHTML=welderSVG(save.char,save.eq.frame);const nm=$('meName');if(nm)nm.textContent=save.char.name||'Namnlös svetsare'}
+let charTab=null;
+function openChar(){mode='char';show('charSheet');$('cName').value=save.char.name||'';renderChar();$('charSheet').scrollTop=0}
+function renderChar(){
+  const c=save.char;
+  $('charPrev').innerHTML=welderSVG(c,save.eq.frame);
+  document.querySelectorAll('#cGender button').forEach(b=>b.classList.toggle('on',b.dataset.v===c.g));
+  const sw=(arr,key,isCol)=>arr.map((v,i)=>`<button class="copt ${c[key]===i?'on':''}" data-k="${key}" data-v="${i}" aria-label="${isCol?'Färg '+(i+1):v[1]}"><span style="background:${isCol?v:v[0]}"></span></button>`).join('');
+  const tx=(arr,key)=>arr.map(([id,n])=>`<button class="ctxt ${c[key]===id?'on':''}" data-k="${key}" data-s="${id}">${n}</button>`).join('');
+  const owned=SHOP.frame.items.filter(it=>!it.p||save.owned.includes(it.id));
+  $('charOpts').innerHTML=
+    `<div class="crow"><label>Visir</label><div class="cscroll">${tx([['up','Uppfällt'],['down','Nedfällt']],'visor')}</div></div>`+
+    `<div class="crow"><label>Hjälmram när du svetsar</label><div class="cscroll">${tx([['on','Visa'],['off','Dölj']],'frameOn')}</div></div>`+
+    `<div class="crow"><label>Hudton</label><div class="cscroll">${sw(SKINS,'skin',true)}</div></div>`+
+    `<div class="crow"><label>Frisyr</label><div class="cscroll">${tx(HAIRS,'hair')}</div></div>`+
+    `<div class="crow"><label>Hårfärg</label><div class="cscroll">${sw(HAIRC,'hairc',true)}</div></div>`+
+    (c.g==='m'?`<div class="crow"><label>Skägg</label><div class="cscroll">${tx(BEARDS,'beard')}</div></div>`:'')+
+    `<div class="crow"><label>Svetsjacka</label><div class="cscroll">${JACKETS.map((j,i)=>`<button class="copt ${c.jacket===i?'on':''}" data-k="jacket" data-v="${i}" aria-label="${j[1]}"><span style="background:${j[0]}"></span></button>`).join('')}</div></div>`+
+    `<div class="crow"><label>Svetshjälm <small>${owned.length}/${SHOP.frame.items.length} ägda</small></label><div class="cscroll">${owned.map(it=>`<button class="chelm ${save.eq.frame===it.id?'on':''}" data-h="${it.id}" aria-label="${it.n}">${helmetOnlySVG(it.id)}</button>`).join('')}<button class="ctxt" id="toHelmShop">Köp fler ›</button></div></div>`;
+}
+
+/* ---------- progression & shop ---------- */
+save.opts=Object.assign({aim:1,pace:1,loupe:1,above:0,tig:0},save.opts||{});
+const AIM=[0,.35,.65];
+function renderAssist(){
+  const o=save.opts,row=(lab,k,vals)=>`<div class="arow"><span>${lab}</span><div class="chipset">${vals.map(([v,n])=>`<button data-o="${k}" data-v="${v}" class="${o[k]===v?'on':''}">${n}</button>`).join('')}</div></div>`;
+  $('assist').innerHTML='<h4>Hjälpmedel</h4>'+row('Siktstöd','aim',[[0,'Av'],[1,'Lätt'],[2,'Stark']])+row('Taktmarkör','pace',[[1,'På'],[0,'Av']])+row('Lupp','loupe',[[1,'På'],[0,'Av']])+row('Bågen','above',[[0,'Under fingret'],[1,'Ovanför']])+(M.proc==='tig'?row('TIG-tråd','tig',[[0,'Manuell'],[1,'Auto'],[2,'Av']]):'');
+}
+$('assist').onclick=e=>{const b=e.target.closest('[data-o]');if(!b)return;save.opts[b.dataset.o]=+b.dataset.v;if(b.dataset.o==='loupe'){loupeOn=!!save.opts.loupe;$('tLoupe').classList.toggle('on',loupeOn)}persist();renderAssist()};
+function renderWallet(){
+  renderMe();
+  const r=rankOf(save.earned),nx=RANKS[r+1];
+  $('rankName').textContent=RANKS[r][1];$('cash').textContent=kr(save.money);
+  $('rankBar').style.width=(nx?Math.min(100,(save.earned-RANKS[r][0])/(nx[0]-RANKS[r][0])*100):100)+'%';
+  $('rankNext').textContent=nx?`${kr(nx[0]-save.earned)} kvar till ${nx[1]}`:'Högsta titeln. Du är bäst i verkstan.';
+}
+let shopTab='gear';
+function preview(slot,it){
+  if(slot==='frame')return`<span class="pv helm">${helmetOnlySVG(it.id)}</span>`;
+  if(slot==='glove')return`<span class="pv" style="background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.25),transparent 50%),${it.c}"></span>`;
+  if(slot==='spark'){const p=it.pal;return`<span class="pv" style="background:#0b0b0d;box-shadow:inset 0 0 18px rgb(${p[1]})"><span style="width:10px;height:10px;border-radius:50%;background:rgb(${p[0]});box-shadow:0 0 12px 4px rgb(${p[1]}),0 0 24px 8px rgb(${p[2]})"></span></span>`}
+  const t=SHOP[slot].items.indexOf(it);return`<span class="pv" style="background:#0f1012;color:${['#9a978e','#ffc21a','#5fd47a'][t]}">${'I'.repeat(t+1)}</span>`;
+}
+function renderShop(){
+  $('shopCash').textContent=kr(save.money);
+  document.querySelectorAll('.stabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===shopTab));
+  $('shopList').innerHTML=Object.entries(SHOP).filter(([,g])=>g.tab===shopTab).map(([slot,g])=>`<h3>${g.n}</h3>`+g.items.map(it=>{
+    const owned=!it.p||save.owned.includes(it.id),eq=save.eq[slot]===it.id;
+    const btn=eq?`<button class="sbtn eq" disabled>Används</button>`:owned?`<button class="sbtn own" data-s="${slot}" data-i="${it.id}">Använd</button>`:`<button class="sbtn" data-s="${slot}" data-i="${it.id}" ${save.money<it.p?'disabled':''}>${kr(it.p)}</button>`;
+    return`<div class="sitem ${eq?'eq':''}">${preview(slot,it)}<div class="tx"><b>${it.n}</b>${it.d?`<span>${it.d}</span>`:''}${!owned&&save.money<it.p?`<em>Saknar ${kr(it.p-save.money)}</em>`:''}</div>${btn}</div>`}).join('')).join('');
+}
+function openShop(){mode='shop';show('shop');renderShop();$('shop').scrollTop=0}
+$('openShop').onclick=openShop;
+$('meAv').onclick=openChar;
+$('charDone').onclick=goHome;
+$('cName').addEventListener('input',e=>{save.char.name=e.target.value.trim().slice(0,16);persist()});
+$('cGender').onclick=e=>{const b=e.target.closest('button');if(!b)return;save.char.g=b.dataset.v;if(b.dataset.v==='f'&&save.char.hair==='kort'){save.char.hair='hast'}persist();renderChar()};
+$('charOpts').onclick=e=>{
+  const h=e.target.closest('.chelm');if(h){save.eq.frame=h.dataset.h;persist();renderChar();return}
+  if(e.target.closest('#toHelmShop')){shopTab='cos';openShop();return}
+  const b=e.target.closest('[data-k]');if(!b)return;const k=b.dataset.k;save.char[k]=b.dataset.s!=null?b.dataset.s:+b.dataset.v;persist();renderChar()};
+$('shopBack').onclick=goHome;
+document.querySelector('.stabs').onclick=e=>{const b=e.target.closest('button');if(!b)return;shopTab=b.dataset.t;renderShop()};
+$('shopList').onclick=e=>{const b=e.target.closest('button[data-i]');if(!b||b.disabled)return;const slot=b.dataset.s,it=SHOP[slot].items.find(x=>x.id===b.dataset.i);
+  const owned=!it.p||save.owned.includes(it.id);
+  if(!owned){if(save.money<it.p)return;save.money-=it.p;save.owned.push(it.id);toast(`Köpt: ${it.n}`);audio();pop();buzz(20);
+    if(it.p>=2500)setTimeout(()=>pelle('good',true,'Äntligen riktiga grejer! Nu har du inga ursäkter kvar. <i>*hick*</i>'),250)}
+  save.eq[slot]=it.id;persist();renderShop();renderWallet()};
+
+/* ---------- screens ---------- */
+function show(id){['home','setup','result','wpsList','wpsForm','shop','charSheet'].forEach(s=>$(s).hidden=s!==id);$('homeTop').hidden=!(id==='home'||id==='setup'||id==='wpsList'||id==='wpsForm'||id==='shop'||id==='charSheet')}
+function stars(n){return[0,1,2].map(i=>`<span class="${i<n?'':'o'}">★</span>`).join('')}
+function renderJobs(){
+  const tot=save.stars.reduce((a,b)=>a+(b||0),0);$('totStars').textContent=`★ ${tot} / ${JOBS.length*3}`;
+  $('jobs').innerHTML=JOBS.map((j,i)=>{const open=i===0||(save.stars[i-1]||0)>=1;
+    return`<button class="job" data-i="${i}" ${open?'':'disabled'}><span class="no">${i+1}</span><span class="t"><b>${j.n}</b><span>${MATS[j.mat].n} · ${j.mm} mm${open?'':' · Låst'}</span></span><span class="r"><span class="stars">${stars(save.stars[i]||0)}</span><br>${save.best[i]!=null?save.best[i]+'%':''}</span></button>`}).join('');
+  renderWps();renderWallet();
+}
+function initDemo(){const j=JOBS[0];initJob(0,{v:j.v,w:j.w,gas:j.gas,dia:j.dia,flow:14,stick:12},true)}
+function goHome(){$('pelle').hidden=true;$('pmini').hidden=true;mode='home';arcStop();$('hudTop').hidden=true;$('hudBot').hidden=true;$('hint').hidden=true;show('home');renderJobs();initDemo()}
+$('jobs').onclick=e=>{const b=e.target.closest('.job');if(!b||b.disabled)return;openSetup(+b.dataset.i)};
+let cur=0;
+function openSetup(i){
+  cur=i;const j=JOBS[i],m=MATS[j.mat];mode='setup';show('setup');
+  $('jobName').textContent=j.n;$('jobDesc').textContent=j.d;
+  $('jobChips').innerHTML=`<span class="chip">JOBB ${i+1}</span><span class="chip">${m.n.toUpperCase()}</span><span class="chip">${j.mm} MM</span><span class="chip" style="border-color:var(--hazard);color:var(--hazard)">KRAV a${j.a}</span>`;
+  fillWpsPick();machineToUI();renderAssist();
+  if(!E||!E.demo)initDemo();
+}
+$('setupBack').onclick=goHome;
+$('strike').onclick=()=>{audio();uiToMachine();startWeld()};
+const TUT=[
+  ['Håll farten','Dra fingret jämnt längs fogen. Håll nålen på fartmätaren i det <b>gröna fältet</b>. För långsamt ger tjock, het svets. För snabbt ger tunn svets som inte håller.'],
+  ['Akta värmen','Mätaren <b>Plåtvärme</b> visar hur varm plåten är. Blir den röd bränner du hål. Plåten blir varmare ju längre du svetsar, så öka farten lite mot slutet.'],
+  ['Fyll kratern','När du är klar: <b>stanna fingret stilla en halv sekund</b> innan du lyfter. Annars blir det en krater. Startar du om mitt i fogen, börja exakt där du slutade.']
+];
+function tutorial(done){let i=0;const el=$('tut');const step=()=>{$('tutStep').textContent=`TIPS ${i+1} / ${TUT.length}`;$('tutH').textContent=TUT[i][0];$('tutP').innerHTML=TUT[i][1];$('tutNext').textContent=i<TUT.length-1?'NÄSTA':'SÄTT IGÅNG'};
+  el.hidden=false;step();$('tutNext').onclick=()=>{i++;if(i<TUT.length)step();else{el.hidden=true;save.tut=1;persist();done()}}}
+function startWeld(){
+  if(!save.tut){tutorial(startWeld);return}
+  loupeOn=!!save.opts.loupe;$('tLoupe').classList.toggle('on',loupeOn);$('pmini').hidden=true;
+  mode='weld';show('none');$('homeTop').hidden=true;$('hudTop').hidden=false;$('hudBot').hidden=false;$('pelle').hidden=true;
+  $('hudJob').textContent=JOBS[cur].n;
+  const w=save.wps.find(x=>x.id===M.wps);
+  const pr=M.proc||'mig';
+  $('hudPar').textContent=pr==='tig'?`TIG · ${M.tA} A ${M.tAC} · ${M.tGas} ${M.tFlow} l/min · W Ø${fmt(M.tW)}`:pr==='mma'?`MMA · ${M.eA} A · ${M.eType} Ø${fmt(M.eDia)}`:`${w?w.name+' · ':''}${fmt(M.v)} V · ${fmt(M.w)} m/min · ${M.gas} ${M.flow} l/min · Ø${fmt(M.dia)}`;
+  $('pTig').hidden=pr!=='tig';tigModeUI();$('pMma').hidden=pr!=='mma';$('tChip').hidden=pr!=='mma';$('rodBtn').classList.remove('warn');lastFill=-1;lastRod=-1;lastFs='';
+  $('inspect').disabled=true;fbTxt='x';setFb('','');lastProg=-1;lastNeedle=-1;gaugeW=0;hv=0;lastHeat=-1;lastFlow=-1;lastA=-1;$('hintTxt').innerHTML=pr==='tig'?(save.opts.tig?'Dra <b>lugnt</b> längs fogen. Tillsatstråden sköts '+(save.opts.tig===1?'automatiskt':'inte (av)')+'.':'Dra <b>lugnt</b> längs fogen. Tryck <b>DOPPA</b> när ringen når det <b>vita fältet</b>.<br>Du kan också trycka med <b>ett andra finger</b> var som helst.'):pr==='mma'?'Elektroden brinner ner. När den är slut: <b>BYT ELEKTROD</b> och starta på kratern.<br>Knacka bort slaggen med <b>SLAGG</b> innan du trycker KLAR.':'Sätt fingret på fogen och <b>dra jämnt</b> längs den.<br>Bågen tänds där du trycker.';
+  hudTopH=$('hudTop').offsetHeight;hudBotH=$('hudBot').offsetHeight;
+  initJob(cur,Object.assign({},M),false);setTool('weld');
+  $('visor').style.background=eqItem('frame').css;
+  $('hint').hidden=false;
+}
+$('quit').onclick=()=>{arcStop();grindStop();$('pmini').hidden=true;if(E){E.grinding=false;E.chipping=false;E.arc=false}$('hudTop').hidden=true;$('hudBot').hidden=true;$('hint').hidden=true;openSetup(cur);initDemo()};
+$('helmetBtn').onclick=()=>{helmet=!helmet;$('helmetBtn').classList.toggle('on',helmet);$('helmetBtn').textContent=helmet?'HJÄLM':'UTAN HJÄLM';if(!helmet)pelle('helmet',true);dirty=true};
+$('inspect').onclick=()=>{if(E&&E.started)finish()};
+
+function aStats(){
+  const lo=E.aReq-.3,hi=E.aReq+1.2,m=E.r0*.35;let n=0,ok=0,under=0,over=0,sum=0,min=99,max=0;const arr=[];
+  for(let i=0;i<E.n;i++){const r=E.binR[i];if(r<=m){arr.push(0);continue}const a=E.aReq*r/E.r0;arr.push(a);n++;sum+=a;if(a<min)min=a;if(a>max)max=a;if(a<lo)under++;else if(a>hi)over++;else ok++}
+  return{arr,mean:n?sum/n:0,min:n?min:0,max,aQ:n?ok/E.n:0,underF:under/E.n,overF:over/E.n};
+}
+function drawAChart(A){
+  const c=$('aChart'),g=c.getContext('2d'),Wc=c.width,Hc=c.height,pl=40,pr=10,pt=14,pb=24,ymax=Math.max(E.aReq+2.5,Math.ceil(A.max+.5));
+  const X=i=>pl+(Wc-pl-pr)*i/Math.max(1,A.arr.length-1),Y=a=>pt+(Hc-pt-pb)*(1-a/ymax);
+  g.clearRect(0,0,Wc,Hc);g.fillStyle='#0f1012';g.fillRect(0,0,Wc,Hc);
+  g.fillStyle='rgba(95,212,122,.14)';g.fillRect(pl,Y(E.aReq+1.2),Wc-pl-pr,Y(E.aReq-.3)-Y(E.aReq+1.2));
+  g.font='600 12px "JetBrains Mono",monospace';g.textAlign='right';g.textBaseline='middle';
+  for(let a=0;a<=ymax;a++){g.strokeStyle='rgba(255,255,255,.06)';g.beginPath();g.moveTo(pl,Y(a));g.lineTo(Wc-pr,Y(a));g.stroke();if(a%1===0){g.fillStyle='#9a978e';g.fillText(a,pl-8,Y(a))}}
+  g.setLineDash([6,5]);g.strokeStyle='#ffc21a';g.lineWidth=1.5;g.beginPath();g.moveTo(pl,Y(E.aReq));g.lineTo(Wc-pr,Y(E.aReq));g.stroke();g.setLineDash([]);
+  g.fillStyle='#ffc21a';g.textAlign='left';g.fillText('krav a'+E.aReq,pl+6,Y(E.aReq)-10);
+  g.lineWidth=2.4;g.lineJoin='round';let pen=false;
+  for(let i=0;i<A.arr.length;i++){const a=A.arr[i];if(!a){pen=false;continue}const col=a<E.aReq-.3?'#ff5046':a>E.aReq+1.2?'#ffc21a':'#5fd47a';
+    if(!pen){g.beginPath();g.moveTo(X(i),Y(a));pen=true}else{g.lineTo(X(i),Y(a));g.strokeStyle=col;g.stroke();g.beginPath();g.moveTo(X(i),Y(a))}}
+  for(let i=0;i<A.arr.length;i++)if(!A.arr[i]){g.fillStyle='rgba(255,80,70,.5)';g.fillRect(X(i)-1,Y(0)-4,Math.max(2,(Wc-pl-pr)/A.arr.length),4)}
+  g.fillStyle='#9a978e';g.textAlign='center';g.textBaseline='alphabetic';g.fillText('start',pl+14,Hc-6);g.fillText('slut',Wc-pr-14,Hc-6);g.fillText('mm',16,pt+4);
+}
+let R=null;
+function finish(){
+  if(!E||mode!=='weld')return;$('pmini').hidden=true;
+  if(E.grinding){E.grinding=false;grindStop()}
+  E.arc=false;arcStop();mode='result';$('hudTop').hidden=true;$('hudBot').hidden=true;$('hint').hidden=true;dirty=true;
+  const j=JOBS[cur],cov=coverage(),A=aStats();
+  const on=E.dimes.filter(d=>d.d<E.r0*2.2);
+  const acc=on.length?Math.max(0,1-(on.reduce((a,d)=>a+d.d,0)/on.length)/(E.r0*.85)):0;
+  const cA=A.arr.filter(a=>a>0),mA=cA.length?cA.reduce((a,b)=>a+b,0)/cA.length:0,sdA=cA.length?Math.sqrt(cA.reduce((a,b)=>a+(b-mA)**2,0)/cA.length):0;
+  const cons=cA.length?Math.max(0,1-(sdA/Math.max(.1,mA))*E.sdK):0;
+  const spd=E.arcT?Math.min(1,E.goodT/E.arcT):0;
+  const waste=Math.min(1,E.waste/Math.max(20,E.dimes.length));
+  const P=live('P'),K=live('K'),S=live('S'),Hn=live('H'),Gn=live('G'),In=live('I'),sp=E.spats.length,slag=slagLeft();
+  const poreP=Math.min(25,P*.5),spP=Math.min(6,sp*.06);
+  let score=100*(cov*.27+acc*.15+cons*.1+spd*.18+E.setQ*.15+A.aQ*.15)-Hn*10-waste*15-poreP-K*8-S*8-Gn*6-spP-In*8-slag*15;
+  if(j.strict&&(P>0||K>0||Hn>0))score=Math.min(score,59);
+  if(P>40)score=Math.min(score,55);if(E.proc==='tig'&&j.mat==='alu'&&E.st.tAC!=='AC')score=Math.min(score,55);
+  if(A.underF>.15)score=Math.min(score,74);
+  score=Math.round(Math.max(0,Math.min(100,cov<.3?score*.5:score)));
+  const st=score>=90?3:score>=78?2:score>=60?1:0;
+  const prevS=save.stars[cur]||0;
+  let pay=st>0?Math.round(PAY[cur]*score/100/10)*10:0,bonus=st===3&&prevS<3?Math.round(PAY[cur]*.5/10)*10:0;
+  const flowBonus=st>0&&E.bestFlow>=5?Math.round(PAY[cur]*.1/10)*10:0;bonus+=flowBonus;
+  const discs=Math.round(E.grindT*20/5)*5;
+  R={score,st,pay,bonus,flowBonus,discs,prevS};
+  $('rPay').textContent=(st?'+':'')+kr(pay+bonus);$('rPay').style.color=pay?'var(--good)':'var(--bad)';
+  $('rPayTxt').textContent=st===0?'Ingen lön. Kunden vägrar ta emot det här.':bonus?`Lön vid leverans + bonus (${flowBonus?'rytm '+fmt(E.bestFlow)+' s':''}${flowBonus&&bonus>flowBonus?' + ':''}${bonus>flowBonus?'första 3★':''})`:'Lön vid leverans';
+  $('rCost').hidden=!discs;$('rCostV').textContent='−'+kr(discs);
+  $('rPct').textContent=score+'%';$('rStars').innerHTML=stars(st);
+  $('rVerdict').textContent=st===3?'Godkänd av besiktningen. Proffsfog!':st===2?'Godkänd svets. Snyggt jobbat.':st===1?'Godkänd, men med anmärkningar.':'Underkänd. Slipa ur felen och laga, eller skrota.';
+  const bar=(l,v,c)=>`<span>${l}</span><i><s style="width:${Math.round(v*100)}%;background:${c}"></s></i><b>${Math.round(v*100)}%</b>`;
+  const col=v=>v>.8?'var(--good)':v>.55?'var(--hazard)':'var(--bad)';
+  const cnt=(l,n,k)=>`<span>${l}</span><i><s style="width:${Math.min(100,n*k)}%;background:var(--bad)"></s></i><b>${n} st</b>`;
+  $('rBars').innerHTML=bar('Täckning',cov,col(cov))+bar('a-mått inom krav',A.aQ,col(A.aQ))+bar('Precision',acc,col(acc))+bar('Jämnhet',cons,col(cons))+bar('Fart',spd,col(spd))+bar('Parametrar',E.setQ,col(E.setQ))
+    +cnt('Porer',P,3)+cnt('Kratrar',K,34)+cnt('Startfel',S,34)+cnt('Genombränning',Hn,25)+cnt('Slipskador',Gn,34)+cnt('Svetssprut',sp,1.5)+(E.proc==='mma'?cnt('Slagginneslutning',In,34)+`<span>Slagg kvar</span><i><s style="width:${Math.round(slag*100)}%;background:var(--bad)"></s></i><b>${Math.round(slag*100)} %</b>`:'');
+  $('aHead').textContent=`a-mått längs fogen · krav a${E.aReq}`;drawAChart(A);
+  const pxmm=E.P.w/COUPON_MM,ts=E.arcT>.2?Math.round(E.dist/pxmm/E.arcT*60):0,I=amps(E.st.dia,E.st.w),Q=heatIn(E.st.v,I,ts);
+  const w=save.wps.find(x=>x.id===M.wps);
+  const cell=(l,v)=>`<div><small>${l}</small><b>${v}</b></div>`;
+  const st2=E.st,pp=E.proc;
+  const pc2=pp==='tig'?cell('Metod','141 TIG')+cell('Ström',`${st2.tA} A ${st2.tAC}`)+cell('Volfram',`Ø ${fmt(st2.tW)} mm`)+cell('Gas',`${st2.tGas} · ${st2.tFlow} l/min`)
+    :pp==='mma'?cell('Metod','111 MMA')+cell('Ström',`${st2.eA} A`)+cell('Elektrod',`${st2.eType} Ø ${fmt(st2.eDia)}`)+cell('Elektroder',`${E.rodsUsed||1} st`)
+    :cell('WPS',w?esc(w.name):'Ingen')+cell('Metod',procOf(st2.gas))+cell('Spänning',fmt(st2.v)+' V')+cell('Ström',`≈ ${I} A`)+cell('Trådmatning',fmt(st2.w)+' m/min')+cell('Gas',`${st2.gas} · ${st2.flow} l/min`);
+  const Ip=pp==='tig'?st2.tA:pp==='mma'?st2.eA:I,Up=pp==='tig'?10+.04*st2.tA:pp==='mma'?20+.04*st2.eA:st2.v,Qp=ts?(pp==='tig'?.6:.8)*Up*Ip*60/(ts*1000):0;
+  $('rProto').innerHTML=pc2+cell('a-mått medel',A.mean?'a '+fmt(A.mean):'–')+cell('a-mått min',A.min?'a '+fmt(A.min):'–')+cell('Hastighet',ts?ts+' mm/min':'–')+cell('Sträckenergi',Qp?fmt(Qp,2)+' kJ/mm':'–');
+  const tips=[];
+  if(j.strict&&(P||K||Hn))tips.push('Tryckkärl godkänns inte med porer, kratrar eller hål. Slipa ur felen och svetsa om.');
+  const IJ=ideal(j);
+  if(E.proc==='mma'&&slag>.1)tips.push('Slagg kvar på svetsen. Knacka bort den med SLAGG innan du trycker KLAR.');
+  if(In)tips.push('Slagginneslutning: knacka alltid bort slaggen innan du startar en ny elektrod.');
+  if(E.proc==='tig'&&E.acQ<1)tips.push(j.mat==='alu'?'Aluminium ska TIG-svetsas med AC, annars bryts inte oxidhinnan.':'Stål och rostfritt TIG-svetsas med DC minus.');
+  if(E.proc==='tig'&&E.gasQ<1)tips.push('TIG kräver ren argon (I1). Aktiv gas förstör volframelektroden.');
+  if(E.proc==='tig'&&E.flowQ<.8)tips.push(`Gasflöde för TIG: ${IJ.tFlow[0]}–${IJ.tFlow[1]} l/min.`);
+  if(E.proc==='tig'&&A.underF>.15)tips.push('För lite tillsatstråd. Doppa oftare och i jämn takt.');
+  if(E.proc==='tig'&&A.overF>.2)tips.push('För mycket tillsatstråd. Doppa lite glesare.');
+  if(E.proc==='mma'&&E.typeQ<1)tips.push(IJ.eType==='E7018'?'Bärande konstruktioner ska svetsas med basisk elektrod (E7018).':'Rutilelektrod (E6013) räcker här och är lättare att svetsa med.');
+  if(E.proc==='mma'&&E.diaQ<1)tips.push(`${j.mm} mm plåt passar elektrod Ø ${fmt(IJ.eDia)} mm.`);
+  if(E.proc!=='mig'&&E.sqVW<.8)tips.push(`Fel strömstyrka. Tabellen säger cirka ${E.proc==='tig'?IJ.tigA:IJ.eA} A.`);
+  if(E.proc==='mig'&&E.gasQ<.5)tips.push(j.gas==='I1'?'Aluminium ska svetsas med ren argon (I1). Blandgas ger porer och sot.':`Fel gas. ${MATS[j.mat].n} svetsas med ${GASES[j.gas]}.`);
+  if(E.proc==='mig'&&E.flowQ<.8)tips.push(+E.st.flow<j.flow[0]?`För lite gas gav porer. Kör ${j.flow[0]}–${j.flow[1]} l/min.`:`För mycket gas ger turbulens som drar in luft. Kör ${j.flow[0]}–${j.flow[1]} l/min.`);
+  if(A.underF>.15)tips.push(`För litet a-mått på ${Math.round(A.underF*100)} % av fogen. Kör lite långsammare eller öka trådmatningen.`);
+  if(Gn)tips.push('Slipskador: slipa bara fogen, och sluta när svetsen är plan. Slipar du vidare tar du bort godset.');
+  if(K)tips.push('Krater i slutet: stanna fingret stilla en halv sekund innan du släpper. En krater kan också fyllas om du startar igen precis på den.');
+  if(S)tips.push('Startfel: slipa ur startfelet med vinkelslipen och svetsa om, eller börja alltid exakt där förra svetsen slutade.');
+  if(Hn)tips.push('Hål i plåten betyder att du stod still eller körde för långsamt. Håll koll på plåtvärmen.');
+  if(P&&!tips.length)tips.push('Porer kan slipas ur med vinkelslipen. Svetsa sedan om spåret.');
+  if(cov<.9)tips.push('Svetsa hela fogen från markering till markering.');
+  if(A.overF>.2)tips.push('För stort a-mått: du lägger för mycket material. Kör lite fortare.');
+  if(spd<.7)tips.push(E.sp>E.target?'Du körde för snabbt. Håll nålen i det gröna fältet.':'Du körde för långsamt. Håll nålen i det gröna fältet.');
+  if(acc<.7)tips.push('Du hamnade bredvid fogen. Använd luppen för att se var du svetsar.');
+  if(E.proc==='mig'&&E.sqVW<.8)tips.push(j.hide?'Spänning och trådmatning var inte rätt. Tjockare plåt behöver mer av båda.':'Ställ in spänning och trådmatning enligt tabellen.');
+  if(E.proc==='mig'&&E.diaQ<1)tips.push(`Fel tråddiameter. ${j.mm} mm plåt passar Ø ${fmt(j.dia)} mm tråd.`);
+  if(sp>15)tips.push('Mycket svetssprut kvar. Slipa bort det med vinkelslipen innan leverans.');
+  if(!tips.length)tips.push(w?`Klockrent enligt ${w.name}. Rätt a-mått, inga defekter.`:'Klockrent. Rätt a-mått, inga defekter. Spara inställningarna som ett WPS!');
+  $('rTip').textContent=tips[0];
+  const ph=$('photo'),pc=ph.getContext('2d'),Pl=E.P;
+  const sx=Pl.x*DPR,sy=Pl.y*DPR,sw=Pl.w*DPR,sh=Pl.h*DPR;ph.height=Math.round(600*sh/sw);
+  pc.drawImage(workC,sx,sy,sw,sh,0,0,600,ph.height);if(E.proc==='mma')pc.drawImage(slagC,sx,sy,sw,sh,0,0,600,ph.height);
+  const DC={P:'#ffc21a',H:'#ff5046',K:'#ff8a3d',S:'#6fc3ff',G:'#c78dff',I:'#a3e635'},seen={};
+  pc.lineWidth=2.5;pc.font='700 11px "JetBrains Mono",monospace';pc.textAlign='center';pc.textBaseline='middle';
+  for(const d of E.defects){if(d.rm)continue;const k=d.t+Math.round(d.x/(E.r0*2))+'_'+Math.round(d.y/(E.r0*2));if(seen[k])continue;seen[k]=1;
+    const x=(d.x-Pl.x)/Pl.w*600,y=(d.y-Pl.y)/Pl.h*ph.height,r=d.t==='P'?9:14;
+    pc.strokeStyle=DC[d.t];pc.beginPath();pc.arc(x,y,r,0,7);pc.stroke();pc.fillStyle=DC[d.t];pc.fillText(d.t,x,y-r-8)}
+  const cn={P,H:Hn,K,S,G:Gn,I:In},nm={P:'Por',H:'Hål',K:'Krater',S:'Startfel',G:'Slipskada',I:'Slagg'};
+  $('rLegend').innerHTML=Object.keys(nm).filter(k=>cn[k]).map(k=>`<span><i style="border-color:${DC[k]};color:${DC[k]}">${k}</i>${nm[k]}</span>`).join('')||'<span style="color:var(--good)">Besiktning: inga synliga defekter</span>';
+  $('next').textContent=st?`LEVERERA  +${kr(Math.max(0,pay+bonus-discs))}`:'LEVERERA ÄNDÅ';
+  show('result');$('result').scrollTop=0;
+  if(st===0)setTimeout(()=>pelle('fail',true),350);else if(st===3)setTimeout(()=>pelle('good',true),350);
+}
+function deliver(){
+  if(!R)return;const r=R;R=null;
+  const net=r.pay+r.bonus-r.discs;
+  save.money=Math.max(0,save.money+net);if(net>0)save.earned+=net;
+  const rBefore=rankOf(save.earned-Math.max(0,net));
+  save.stars[cur]=Math.max(r.prevS,r.st);save.best[cur]=Math.max(save.best[cur]||0,r.score);persist();
+  const rAfter=rankOf(save.earned);
+  const nx=cur+1<JOBS.length&&(save.stars[cur]||0)>=1;
+  if(r.st>0&&r.prevS===0&&cur+1<JOBS.length)setTimeout(()=>toast(`Jobb ${cur+2} upplåst!`),1400);
+  if(rAfter>rBefore)setTimeout(()=>toast(`Befordrad: ${RANKS[rAfter][1]}!`),2800);
+  toast(net>=0?`Levererat: +${kr(net)}`:`Levererat: ${kr(net)}`);
+  if(r.st===0)setTimeout(()=>pelle('fail',true,'Levererar du SKIT till kunden?! Nu ringer de mig och klagar! <i>*hick*</i>'),300);
+  if(nx)openSetup(cur+1);else goHome();
+}
+function repair(){
+  if(!E)return;R=null;mode='weld';show('none');$('homeTop').hidden=true;$('hudTop').hidden=false;$('hudBot').hidden=false;$('pelle').hidden=true;
+  E.started=true;$('inspect').disabled=false;setTool('grind');lastProg=-1;
+  $('hintTxt').innerHTML='<b>Vinkelslip:</b> slipa ur felen tills svetsen är borta där.<br>Byt sedan till <b>SVETS</b> och svetsa om spåret.';$('hint').hidden=false;
+  setTimeout(()=>{if(mode==='weld')$('hint').hidden=true},3500);dirty=true;
+}
+$('next').onclick=deliver;
+$('repairB').onclick=repair;
+$('retry').onclick=()=>{R=null;startWeld()};
+
+
+let rsT=0;addEventListener('resize',()=>{clearTimeout(rsT);rsT=setTimeout(()=>{layout();gaugeW=0;if(mode==='weld')startWeld();else if(E&&E.demo)initDemo();dirty=true},150)});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){arcStop();grindStop();if(E){E.arc=false;E.grinding=false;E.chipping=false}}else{last=performance.now();dirty=true}});
+
+let last=performance.now();
+let visorOp=-1;
+function visorTick(){const o=mode==='weld'&&helmet&&save.char.frameOn!=='off'?Math.round(lens*20)/20:0;if(o!==visorOp){visorOp=o;$('visor').style.opacity=o}}
+function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;update(dt);render();hudTick(dt);visorTick();requestAnimationFrame(loop)}
+layout();goHome();requestAnimationFrame(loop);
+</script>
+
+</body>
+</html>
