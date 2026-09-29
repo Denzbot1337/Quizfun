@@ -805,7 +805,7 @@ async function enterRoom(code,host){
   unPeers=RM.onPeers(onlineTick,()=>{toast('Tappade kontakten med värden');leaveOnline()});
   tone(880,.1);lobby();
 }
-function leaveOnline(){try{unPeers&&unPeers()}catch(e){}try{RM&&RM.leave()}catch(e){}RM=null;ON=null;unPeers=null;home()}
+function leaveOnline(){if(ON)clearTimeout(ON.goneT);try{unPeers&&unPeers()}catch(e){}try{RM&&RM.leave()}catch(e){}RM=null;ON=null;unPeers=null;home()}
 
 function row(p,i,extra){const pr=p.presence;return`<div class="sr ${p.isMe&&p.sameTab?'me':''}"><i>${i}</i>${avatar(Object.assign(cleanAv(pr.av),{aura:'none',pet:'none',name:cleanName(pr.nm)}))}<b>${esc(cleanName(pr.nm))}${pr.host?' <span class="st">♛</span>':''}${p.isMe&&p.sameTab?' (du)':''}</b><span>${extra}</span></div>`}
 
@@ -897,7 +897,10 @@ function podium(ps){
 function onlineTick(){
   if(!RM||!ON)return;
   const h=hostOf(),g=h&&h.presence.game;
-  if(!ON.host&&!h&&(SCREEN==='lobby'||SCREEN==='podium')){toast('Värden lämnade rummet');leaveOnline();return}
+  if(!ON.host){
+    if(h){ON.sawHost=true;clearTimeout(ON.goneT);ON.goneT=0}
+    else if(ON.sawHost&&!ON.goneT&&(SCREEN==='lobby'||SCREEN==='podium'))ON.goneT=setTimeout(()=>{if(ON&&!hostOf()){toast('Värden lämnade rummet');leaveOnline()}},12000);
+  }
   if(!ON.host&&g&&g.gid&&g.gid!==ON.gid&&(SCREEN==='lobby'||SCREEN==='podium')){ON.reward=null;startOnline(g);return}
   if(SCREEN==='lobby')renderLobby();
   else if(SCREEN==='play')renderOpp();
