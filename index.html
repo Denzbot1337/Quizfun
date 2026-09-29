@@ -3,7 +3,6 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<link rel="icon" href="icon.png">
 <link rel="apple-touch-icon" href="icon.png">
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}img{max-width:100%}</style>
 <title>QuizFun</title>
@@ -718,32 +717,53 @@ async function getRoom(){if(ROOM!==undefined)return ROOM;
   if(!window.Peer)await new Promise(r=>{let n=0;const t=setInterval(()=>{if(window.Peer||++n>40){clearInterval(t);r()}},100)});
   ROOM=window.Peer?{join:(name,host)=>makeNet(name,host)}:null;return ROOM}
 function makeNet(name,host){return new Promise((resolve,reject)=>{
-  const HID='quizfun-dz-'+name,me={},others={},conns={},subs=[];let hostConn=null,myId=null,done=false,errCb=[],ntf=0;
-  const peer=new Peer(host?HID:undefined,{debug:0});
+  const HID='quizfun-dz-'+name,me={},others={},conns={},subs=[],errCb=[];
+  const ICE=[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'},{urls:['turn:eu-0.turn.peerjs.com:3478','turn:us-0.turn.peerjs.com:3478'],username:'peerjs',credential:'peerjsp'}];
+  let peer,myId=null,hostConn=null,done=false,closed=false,ntf=0,tries=0,retryT=0,beat=0;
   const notify=()=>{if(ntf)return;ntf=requestAnimationFrame(()=>{ntf=0;subs.forEach(f=>{try{f()}catch(e){}})})};
-  const fail=m=>{errCb.forEach(f=>{try{f({code:'upstream_error',message:m})}catch(e){}});};
+  const fail=m=>{if(closed)return;closed=true;cleanup();errCb.forEach(f=>{try{f({code:'upstream_error',message:m})}catch(e){}})};
   const everyone=()=>Object.assign({[myId]:me},others);
   const broadcast=()=>{const list=everyone();Object.values(conns).forEach(c=>{if(c.open)try{c.send({t:'all',list})}catch(e){}})};
-  const api={presence(patch){for(const k in patch){if(patch[k]===null)delete me[k];else me[k]=patch[k]}if(host)broadcast();else if(hostConn&&hostConn.open)try{hostConn.send({t:'p',p:me})}catch(e){}notify();return Promise.resolve()},
-    peers(){return[{peer:myId,isMe:true,sameTab:true,kind:'viewer',guest:false,presence:me},...Object.entries(others).map(([id,p])=>({peer:id,isMe:false,sameTab:false,kind:'viewer',guest:false,presence:p&&typeof p==='object'?p:{}}))]},
+  const sendMe=()=>{if(hostConn&&hostConn.open)try{hostConn.send({t:'p',p:me})}catch(e){}};
+  const revive=()=>{try{if(peer&&!peer.destroyed&&peer.disconnected)peer.reconnect()}catch(e){}};
+  function cleanup(){clearTimeout(retryT);clearInterval(beat);document.removeEventListener('visibilitychange',onVis);try{peer&&peer.destroy()}catch(e){}}
+  function onVis(){if(document.hidden||closed)return;revive();if(!host&&(!hostConn||!hostConn.open))retry(true)}
+  function connectHost(){
+    if(closed)return;
+    try{hostConn&&hostConn.close()}catch(e){}
+    const c=peer.connect(HID,{reliable:true});hostConn=c;
+    const t=setTimeout(()=>{if(!c.open&&hostConn===c&&done)retry()},7000);
+    c.on('open',()=>{clearTimeout(t);if(hostConn!==c)return;tries=0;sendMe();if(!done){done=true;clearTimeout(to);resolve(api)}else toast('Ansluten igen')});
+    c.on('data',d=>{if(d&&d.t==='all'&&d.list&&typeof d.list==='object'){for(const k in others)delete others[k];for(const [k,v] of Object.entries(d.list))if(k!==myId&&v&&typeof v==='object')others[k]=v;notify()}});
+    c.on('close',()=>{if(hostConn===c&&done&&!closed)retry()});
+    c.on('error',()=>{if(hostConn===c&&done&&!closed)retry()});
+  }
+  function retry(now){
+    if(closed)return;clearTimeout(retryT);
+    if(++tries>15){fail('host_left');return}
+    if(tries===1)toast('Återansluter…');
+    retryT=setTimeout(()=>{revive();connectHost()},now?300:2000);
+  }
+  const api={presence(patch){for(const k in patch){if(patch[k]===null)delete me[k];else me[k]=patch[k]}if(host)broadcast();else sendMe();notify();return Promise.resolve()},
+    peers(){return[{peer:myId,isMe:true,sameTab:true,kind:'viewer',guest:false,presence:me},...Object.entries(others).map(([id,p])=>({peer:id,isMe:false,sameTab:false,kind:'viewer',guest:false,presence:p}))]},
     onPeers(fn,onErr){subs.push(fn);if(onErr)errCb.push(onErr);setTimeout(fn,0);return()=>{const i=subs.indexOf(fn);if(i>=0)subs.splice(i,1)}},
-    leave(){done=true;try{peer.destroy()}catch(e){}return Promise.resolve()}};
-  const to=setTimeout(()=>{if(!done){done=true;try{peer.destroy()}catch(e){}reject({code:'timeout'})}},12000);
-  peer.on('error',e=>{if(!done){done=true;clearTimeout(to);try{peer.destroy()}catch(_){}reject({code:e.type})}else if(e.type!=='peer-unavailable')fail(e.type)});
+    leave(){closed=true;cleanup();return Promise.resolve()}};
+  const to=setTimeout(()=>{if(!done){closed=true;cleanup();reject({code:'timeout'})}},15000);
+  peer=new Peer(host?HID:undefined,{debug:0,config:{iceServers:ICE}});
+  peer.on('error',e=>{if(!done){if(!host&&e.type==='peer-unavailable'||e.type==='unavailable-id'||e.type==='browser-incompatible'){done=true;closed=true;clearTimeout(to);cleanup();reject({code:e.type})}}else if(!host&&e.type==='peer-unavailable')retry()});
+  peer.on('disconnected',()=>{if(!closed)setTimeout(revive,1000)});
   peer.on('open',id=>{myId=id;
     if(host){done=true;clearTimeout(to);
-      peer.on('connection',c=>{conns[c.peer]=c;
-        c.on('data',d=>{if(d&&d.t==='p'&&d.p&&typeof d.p==='object'&&JSON.stringify(d.p).length<4096){others[c.peer]=d.p;broadcast();notify()}});
-        c.on('close',()=>{delete conns[c.peer];delete others[c.peer];broadcast();notify()});
-        c.on('open',broadcast)});
+      peer.on('connection',c=>{
+        c.on('open',()=>{conns[c.peer]=c;broadcast()});
+        c.on('data',d=>{if(d&&d.t==='p'&&d.p&&typeof d.p==='object'&&JSON.stringify(d.p).length<4096){conns[c.peer]=c;others[c.peer]=d.p;broadcast();notify()}});
+        c.on('close',()=>{if(conns[c.peer]===c){delete conns[c.peer];setTimeout(()=>{if(!conns[c.peer]){delete others[c.peer];broadcast();notify()}},8000)}});
+      });
+      beat=setInterval(broadcast,4000);
       resolve(api);
-    }else{
-      hostConn=peer.connect(HID,{reliable:true});
-      hostConn.on('open',()=>{done=true;clearTimeout(to);hostConn.send({t:'p',p:me});resolve(api)});
-      hostConn.on('data',d=>{if(d&&d.t==='all'&&d.list&&typeof d.list==='object'){for(const k in others)delete others[k];for(const [k,v] of Object.entries(d.list))if(k!==myId)others[k]=v;notify()}});
-      hostConn.on('close',()=>{for(const k in others)delete others[k];notify();fail('host_left')});
-    }});
-  peer.on('disconnected',()=>{try{peer.reconnect()}catch(e){}});
+    }else{beat=setInterval(sendMe,4000);connectHost()}
+  });
+  document.addEventListener('visibilitychange',onVis);
 })}
 const people=()=>RM?RM.peers().filter(p=>p.kind==='viewer'&&p.presence&&p.presence.nm):[];
 const hostOf=()=>people().find(p=>p.presence.host===true&&!p.isMe)||people().find(p=>p.presence.host===true);
@@ -782,7 +802,7 @@ async function enterRoom(code,host){
   try{RM=await room.join('qf-'+code,host)}catch(e){RM=null;toast(e&&e.code==='peer-unavailable'?'Hittade inget rum med den koden':e&&e.code==='unavailable-id'?'Koden är upptagen, försök igen':'Kunde inte ansluta, försök igen');return}
   ON={code,host,gid:null,cat:'mix'};
   RM.presence({nm:cleanName(me().name),av:packAv(me()),host,st:'lobby',gid:null,qi:0,sc:0,c:0,game:null}).catch(()=>{});
-  unPeers=RM.onPeers(onlineTick,()=>{toast('Anslutningen bröts');leaveOnline()});
+  unPeers=RM.onPeers(onlineTick,()=>{toast('Tappade kontakten med värden');leaveOnline()});
   tone(880,.1);lobby();
 }
 function leaveOnline(){try{unPeers&&unPeers()}catch(e){}try{RM&&RM.leave()}catch(e){}RM=null;ON=null;unPeers=null;home()}
